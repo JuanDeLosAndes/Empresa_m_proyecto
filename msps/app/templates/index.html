@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="hero">
+    <div class="hero__copy">
+        <h1 class="hero__headline">
+            {{ hero.headline_lines[0] }} <span class="hero__headline-de">DE</span><br>
+            {{ hero.headline_lines[1] }}<br>
+            {{ hero.headline_lines[2] }}
+        </h1>
+        <p class="hero__subtitle">{{ hero.subtitle }}</p>
+    </div>
+
+    <div class="hero__scene" aria-hidden="true">
+        <img class="hero__sky" src="{{ url_for('static', path='/images/hero/hero-cielo.png') }}" alt="">
+        <img class="hero__buildings" src="{{ url_for('static', path='/images/hero/hero-construccion.png') }}" alt="">
+        <img class="hero__excavator" src="{{ url_for('static', path='/images/hero/hero-excavadora.png') }}" alt="Excavadora Link-Belt de Maquiservicio Pérez">
+        <img class="hero__ground" src="{{ url_for('static', path='/images/hero/hero-fondo.png') }}" alt="">
+    </div>
+</section>
+{% endblock %}
