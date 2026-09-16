@@ -1,3 +1,33 @@
-<footer class="site-footer">
-    <p>&copy; 2026 Maquiservicio Pérez S.A.S. — Servicio y Alquiler de Equipos de Excavación.</p>
+<footer class="footer">
+
+    <div class="footer__brand">
+        <img class="footer__logo" src="{{ url_for('static', path='/images/logo/logo-msps.png') }}" alt="Maquiservicio Pérez S.A.S.">
+        <div>
+            <h3>MSPS</h3>
+            <p>
+                Maquiservicio Pérez<br>
+                Alquiler de maquinaria pesada
+            </p>
+        </div>
+    </div>
+
+    <div class="footer__links">
+        <h4>Enlaces</h4>
+        <a href="/">Inicio</a>
+        <a href="/maquinas">Buscar máquina</a>
+        <a href="/login">Iniciar sesión</a>
+        <a href="/registro">Registrarse</a>
+    </div>
+
+    <div class="footer__contact">
+        <h4>Contacto</h4>
+        <p>Teléfono: 300 000 0000</p>
+        <p>Email: contacto@msps.com</p>
+        <p>Colombia</p>
+    </div>
+
 </footer>
+
+<div class="footer__bottom">
+    © 2026 MSPS · Maquiservicio Pérez. Todos los derechos reservados.
+</div>

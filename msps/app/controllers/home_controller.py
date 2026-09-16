@@ -24,6 +24,7 @@ def home(request: Request):
             subtitle="Servicio y alquiler de equipos de excavación para toda Bogotá.",
         )
         .with_auth_forms()
+        .with_categories()
         .build()
     )
     return templates.TemplateResponse(request, "index.html", context)

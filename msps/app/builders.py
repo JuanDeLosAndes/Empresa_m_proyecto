@@ -46,5 +46,28 @@ class PageContextBuilder:
         self._context["empresa_fields"] = AuthFormFactory.build_register_fields("empresa")
         return self
 
+    def with_categories(self, categories: list[dict[str, Any]] | None = None) -> "PageContextBuilder":
+        self._context["categories"] = categories or [
+            {
+                "name": "Retroexcavadora",
+                "href": "/maquinas?categoria=retroexcavadora",
+                "image": None,
+                "color": "#2f3b4c",
+            },
+            {
+                "name": "Excavadora",
+                "href": "/maquinas?categoria=excavadora",
+                "image": "/static/images/hero/hero-excavadora.png",
+                "color": "#f5383a",
+            },
+            {
+                "name": "Volqueta",
+                "href": "/maquinas?categoria=volqueta",
+                "image": None,
+                "color": "#ff7020",
+            },
+        ]
+        return self
+
     def build(self) -> dict[str, Any]:
         return self._context
