@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buscar Máquinas</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 220px 1fr;
+            gap: 30px;
+        }
+        /* SIDEBAR */
+        .sidebar {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            height: fit-content;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .sidebar h3 {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        .categoria {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            cursor: pointer;
+            border-radius: 5px;
+            margin-bottom: 5px;
+        }
+        .categoria:hover {
+            background-color: #f5f5f5;
+        }
+        .categoria.active {
+            background-color: #e3f2fd;
+        }
+        .checkbox {
+            width: 18px;
+            height: 18px;
+            border: 2px solid #ccc;
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: white;
+        }
+        .categoria.active .checkbox {
+            background-color: #2196F3;
+            border-color: #2196F3;
+        }
+        .categoria label {
+            cursor: pointer;
+            font-size: 14px;
+            flex: 1;
+        }
+        /* MAIN */
+        .main {
+            flex: 1;
+        }
+        .search {
+            margin-bottom: 20px;
+        }
+        .search input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        .search input:focus {
+            outline: none;
+            border-color: #2196F3;
+        }
+        /* GRID */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+        .card {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        }
+        .card-img {
+            width: 100%;
+            height: 200px;
+            background: #ddd;
+            overflow: hidden;
+        }
+        .card-img img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .card-body {
+            padding: 15px;
+        }
+        .card-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        .card-spec {
+            font-size: 12px;
+            color: #666;
+            line-height: 1.6;
+        }
+        .spec-label {
+            font-weight: bold;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- SIDEBAR -->
+        <div class="sidebar">
+            <h3>Categoría:</h3>
+            <div class="categoria active" onclick="filtrarCategoria('Volqueta', this)">
+                <div class="checkbox">✓</div>
+                <label>Volqueta</label>
+            </div>
+            <div class="categoria" onclick="filtrarCategoria('Excavadora', this)">
+                <div class="checkbox"></div>
+                <label>Excavadora</label>
+            </div>
+            <div class="categoria" onclick="filtrarCategoria('Retroexcavadora', this)">
+                <div class="checkbox"></div>
+                <label>Retroexcavadora</label>
+            </div>
+        </div>
+
+        <!-- MAIN -->
+        <div class="main">
+            <div class="search">
+                <input type="text" placeholder="Buscar máquina..." onkeyup="filtrarMaquinas()">
+            </div>
+            
+            <div class="grid">
+                <!-- MÁQUINA 1 -->
+                <div class="card" data-categoria="Excavadora" data-nombre="Excavadora" onclick="irADetalle(1)">
+                    <div class="card-img">
+                        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect fill='%23FF9800' width='400' height='300'/%3E%3Ctext x='50%25' y='50%25' font-size='24' fill='white' text-anchor='middle' dominant-baseline='middle'%3EExcavadora%3C/text%3E%3C/svg%3E">
+                    </div>
+                    <div class="card-body">
+                        <div class="card-title">Excavadora</div>
+                        <div class="card-spec">
+                            <span class="spec-label">Tiempo de uso:</span> 1.250 horas<br>
+                            <span class="spec-label">Peso:</span> 3.200 kg<br>
+                            <span class="spec-label">Capacidad:</span> 0,12 m³
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MÁQUINA 2 -->
+                <div class="card" data-categoria="Excavadora" data-nombre="Excavadora" onclick="irADetalle(2)">
+                    <div class="card-img">
+                        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect fill='%23FF9800' width='400' height='300'/%3E%3Ctext x='50%25' y='50%25' font-size='24' fill='white' text-anchor='middle' dominant-baseline='middle'%3EExcavadora%3C/text%3E%3C/svg%3E">
+                    </div>
+                    <div class="card-body">
+                        <div class="card-title">Excavadora</div>
+                        <div class="card-spec">
+                            <span class="spec-label">Tiempo de uso:</span> 2.100 horas<br>
+                            <span class="spec-label">Peso:</span> 4.500 kg<br>
+                            <span class="spec-label">Capacidad:</span> 0,15 m³
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MÁQUINA 3 -->
+                <div class="card" data-categoria="Retroexcavadora" data-nombre="Retroexcavadora" onclick="irADetalle(3)">
+                    <div class="card-img">
+                        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect fill='%23FF6F00' width='400' height='300'/%3E%3Ctext x='50%25' y='50%25' font-size='24' fill='white' text-anchor='middle' dominant-baseline='middle'%3ERetroexcavadora%3C/text%3E%3C/svg%3E">
+                    </div>
+                    <div class="card-body">
+                        <div class="card-title">Retroexcavadora</div>
+                        <div class="card-spec">
+                            <span class="spec-label">Tiempo de uso:</span> 890 horas<br>
+                            <span class="spec-label">Peso:</span> 2.800 kg<br>
+                            <span class="spec-label">Capacidad:</span> 0,10 m³
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MÁQUINA 4 -->
+                <div class="card" data-categoria="Volqueta" data-nombre="Volqueta" onclick="irADetalle(4)">
+                    <div class="card-img">
+                        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect fill='%234CAF50' width='400' height='300'/%3E%3Ctext x='50%25' y='50%25' font-size='24' fill='white' text-anchor='middle' dominant-baseline='middle'%3EVolqueta%3C/text%3E%3C/svg%3E">
+                    </div>
+                    <div class="card-body">
+                        <div class="card-title">Volqueta</div>
+                        <div class="card-spec">
+                            <span class="spec-label">Tiempo de uso:</span> 1.650 horas<br>
+                            <span class="spec-label">Peso:</span> 3.800 kg<br>
+                            <span class="spec-label">Capacidad:</span> 0,14 m³
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function filtrarCategoria(cat, elem) {
+            // Marcar categoría como activa
+            document.querySelectorAll('.categoria').forEach(c => {
+                c.classList.remove('active');
+                c.querySelector('.checkbox').textContent = '';
+            });
+            elem.classList.add('active');
+            elem.querySelector('.checkbox').textContent = '✓';
+
+            // Filtrar máquinas por categoría
+            document.querySelectorAll('.card').forEach(card => {
+                const categoria = card.dataset.categoria;
+                card.style.display = categoria === cat ? '' : 'none';
+            });
+        }
+
+        function filtrarMaquinas() {
+            const buscar = document.querySelector('.search input').value.toLowerCase();
+            document.querySelectorAll('.card').forEach(card => {
+                const nombre = card.dataset.nombre.toLowerCase();
+                const mostrar = nombre.includes(buscar);
+                card.style.display = mostrar ? '' : 'none';
+            });
+        }
+
+        function irADetalle(id) {
+    window.location.href = '/maquina/' + id;
+}
+    </script>
+</body>
+</html>

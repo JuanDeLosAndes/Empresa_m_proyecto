@@ -28,3 +28,25 @@ def home(request: Request):
         .build()
     )
     return templates.TemplateResponse(request, "index.html", context)
+
+
+@router.get("/maquinas")
+def buscar_maquinas(request: Request):
+    context = (
+        PageContextBuilder()
+        .with_title("MSPS · Buscar Máquinas")
+        .with_active_nav("Máquinas")
+        .build()
+    )
+    return templates.TemplateResponse(request, "buscar_maquinas.html", context)
+
+
+@router.get("/maquina/{id}")
+def detalle_maquina(request: Request, id: int):
+    context = (
+        PageContextBuilder()
+        .with_title("MSPS · Detalle de Máquina")
+        .with_active_nav("Máquinas")
+        .build()
+    )
+    return templates.TemplateResponse(request, "detalle_maquina.html", context)

@@ -1,7 +1,3 @@
-/* =========================================================
-   MSPS - Maquiservicio Pérez S.A.S.
-   Hoja de estilos principal
-   ========================================================= */
 
 :root {
     --color-red: #f5383a;
@@ -616,4 +612,402 @@ button {
     .footer__bottom {
         padding: 18px 20px 28px;
     }
+}
+/* =========================================================
+   Búsqueda y Detalle de Máquinas
+   ========================================================= */
+
+.maquinas-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 30px;
+    padding: 40px 40px;
+}
+
+.maquinas-sidebar {
+    background: var(--color-white);
+    padding: 20px;
+    border-radius: 10px;
+    height: fit-content;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.maquinas-sidebar h3 {
+    font-size: 14px;
+    font-weight: bold;
+    margin-bottom: 15px;
+    color: #333;
+}
+
+.categoria {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    cursor: pointer;
+    border-radius: 5px;
+    margin-bottom: 5px;
+}
+
+.categoria:hover {
+    background-color: #f5f5f5;
+}
+
+.categoria.active {
+    background-color: #e3f2fd;
+}
+
+.checkbox {
+    width: 18px;
+    height: 18px;
+    border: 2px solid #ccc;
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    color: white;
+}
+
+.categoria.active .checkbox {
+    background-color: #2196F3;
+    border-color: #2196F3;
+}
+
+.categoria label {
+    cursor: pointer;
+    font-size: 14px;
+    flex: 1;
+}
+
+.maquinas-main {
+    flex: 1;
+}
+
+.maquinas-search {
+    margin-bottom: 20px;
+}
+
+.maquinas-search input {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.maquinas-search input:focus {
+    outline: none;
+    border-color: #2196F3;
+}
+
+.maquinas-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+.maquinas-card {
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    cursor: pointer;
+    transition: all 0.3s;
+    text-decoration: none;
+    color: inherit;
+    display: block;
+}
+
+.maquinas-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+}
+
+.maquinas-card-img {
+    width: 100%;
+    height: 200px;
+    background: #ddd;
+    overflow: hidden;
+}
+
+.maquinas-card-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.maquinas-card-body {
+    padding: 15px;
+}
+
+.maquinas-card-title {
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 10px;
+    color: #333;
+}
+
+.maquinas-card-spec {
+    font-size: 12px;
+    color: #666;
+    line-height: 1.6;
+}
+
+.spec-label {
+    font-weight: bold;
+    color: #333;
+}
+
+/* =========================================================
+   Detalle de Máquina
+   ========================================================= */
+
+.detalle-header {
+    max-width: 1200px;
+    margin: 0 auto 30px;
+    padding: 0 40px;
+}
+
+.btn-volver {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: var(--color-orange);
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    border: none;
+    transition: all 0.3s;
+}
+
+.btn-volver:hover {
+    background-color: var(--color-red);
+    transform: translateY(-2px);
+}
+
+.detalle-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    padding: 0 40px 40px;
+}
+
+.detalle-galeria {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.detalle-img-principal {
+    width: 100%;
+    height: 400px;
+    background: #ddd;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.detalle-img-principal img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.detalle-thumbnails {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+}
+
+.detalle-thumb {
+    width: 100%;
+    height: 100px;
+    background: #ddd;
+    border-radius: 5px;
+    cursor: pointer;
+    overflow: hidden;
+    border: 2px solid transparent;
+    transition: all 0.3s;
+}
+
+.detalle-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.detalle-thumb:hover {
+    border-color: #2196F3;
+}
+
+.detalle-thumb.active {
+    border-color: var(--color-orange);
+}
+
+.detalle-botones-galeria {
+    display: flex;
+    gap: 15px;
+}
+
+.btn {
+    flex: 1;
+    padding: 15px;
+    border: none;
+    border-radius: 25px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all 0.3s;
+}
+
+.btn-cotizar,
+.btn-carrito {
+    background-color: var(--color-orange);
+    color: white;
+}
+
+.btn-cotizar:hover,
+.btn-carrito:hover {
+    background-color: var(--color-red);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 152, 0, 0.3);
+}
+
+.detalle-info {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.detalle-info-card {
+    background: white;
+    padding: 25px;
+    border-radius: 8px;
+    border: 3px solid var(--color-orange);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.detalle-info-card h2 {
+    font-size: 28px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 20px;
+}
+
+.detalle-info-item {
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #eee;
+}
+
+.detalle-info-item:last-of-type {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.detalle-info-label {
+    font-size: 12px;
+    color: var(--color-orange);
+    font-weight: bold;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+}
+
+.detalle-info-value {
+    font-size: 16px;
+    color: #333;
+    font-weight: bold;
+}
+
+.detalle-botones-info {
+    display: flex;
+    gap: 15px;
+    flex-direction: column;
+    margin-top: 10px;
+}
+
+.btn-info {
+    padding: 15px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all 0.3s;
+}
+
+.btn-sacar {
+    background-color: var(--color-red);
+    color: white;
+}
+
+.btn-sacar:hover {
+    background-color: #d32f2f;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(244, 67, 54, 0.3);
+}
+
+.btn-estado {
+    background-color: #4CAF50;
+    color: white;
+    cursor: default;
+}
+
+.btn-estado:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+@media (max-width: 900px) {
+    .maquinas-container {
+        grid-template-columns: 1fr;
+        padding: 20px;
+    }
+
+    .detalle-container {
+        grid-template-columns: 1fr;
+        padding: 0 20px 20px;
+    }
+
+    .detalle-img-principal {
+        height: 300px;
+    }
+
+    .detalle-botones-galeria,
+    .detalle-botones-info {
+        flex-direction: column;
+    }
+
+    .detalle-header {
+        padding: 0 20px;
+    }
+}
+/* Reglas globales que traían los HTML originales, limitadas a estas páginas */
+main:has(.maquinas-container),
+main:has(.detalle-container) {
+    background: #f5f5f5;
+    font-family: Arial, sans-serif;
+    padding: 30px 0;
+}
+
+.maquinas-container h1,
+.maquinas-container h2,
+.maquinas-container h3,
+.maquinas-container p,
+.detalle-container h1,
+.detalle-container h2,
+.detalle-container h3,
+.detalle-container p {
+    margin: 0;
 }

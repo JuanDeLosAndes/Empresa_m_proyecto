@@ -1,0 +1,318 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="detalle-header">
+    <button class="btn-volver" onclick="window.location.href='/maquinas'">← Volver</button>
+</div>
+
+<div class="detalle-container">
+    <!-- GALERIA - LADO IZQUIERDO -->
+    <div class="detalle-galeria">
+        <div class="detalle-img-principal">
+            <img id="imgPrincipal" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='400'%3E%3Crect fill='%23FF9800' width='600' height='400'/%3E%3Ctext x='50%25' y='50%25' font-size='30' fill='white' text-anchor='middle' dominant-baseline='middle'%3EExcavadora%3C/text%3E%3C/svg%3E">
+        </div>
+        <div class="detalle-thumbnails">
+            <div class="detalle-thumb active" onclick="cambiarImagen(this, 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22600%22 height=%22400%22%3E%3Crect fill=%22%23FF9800%22 width=%22600%22 height=%22400%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 font-size=%2230%22 fill=%22white%22 text-anchor=%22middle%22 dominant-baseline=%22middle%22%3EExcavadora%3C/text%3E%3C/svg%3E')">
+                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Crect fill='%23FF9800' width='200' height='200'/%3E%3Ctext x='50%25' y='50%25' font-size='14' fill='white' text-anchor='middle' dominant-baseline='middle'%3EVista 1%3C/text%3E%3C/svg%3E">
+            </div>
+            <div class="detalle-thumb" onclick="cambiarImagen(this, 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22600%22 height=%22400%22%3E%3Crect fill=%22%23FF7043%22 width=%22600%22 height=%22400%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 font-size=%2230%22 fill=%22white%22 text-anchor=%22middle%22 dominant-baseline=%22middle%22%3EVista Lateral%3C/text%3E%3C/svg%3E')">
+                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Crect fill='%23FF7043' width='200' height='200'/%3E%3Ctext x='50%25' y='50%25' font-size='14' fill='white' text-anchor='middle' dominant-baseline='middle'%3EVista 2%3C/text%3E%3C/svg%3E">
+            </div>
+            <div class="detalle-thumb" onclick="cambiarImagen(this, 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22600%22 height=%22400%22%3E%3Crect fill=%22%23F4511E%22 width=%22600%22 height=%22400%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 font-size=%2230%22 fill=%22white%22 text-anchor=%22middle%22 dominant-baseline=%22middle%22%3EVista Trasera%3C/text%3E%3C/svg%3E')">
+                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Crect fill='%23F4511E' width='200' height='200'/%3E%3Ctext x='50%25' y='50%25' font-size='14' fill='white' text-anchor='middle' dominant-baseline='middle'%3EVista 3%3C/text%3E%3C/svg%3E">
+            </div>
+            <div class="detalle-thumb" onclick="cambiarImagen(this, 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22600%22 height=%22400%22%3E%3Crect fill=%22%23E64A19%22 width=%22600%22 height=%22400%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 font-size=%2230%22 fill=%22white%22 text-anchor=%22middle%22 dominant-baseline=%22middle%22%3EVista Detalle%3C/text%3E%3C/svg%3E')">
+                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Crect fill='%23E64A19' width='200' height='200'/%3E%3Ctext x='50%25' y='50%25' font-size='14' fill='white' text-anchor='middle' dominant-baseline='middle'%3EVista 4%3C/text%3E%3C/svg%3E">
+            </div>
+        </div>
+        
+        <!-- BOTONES GALERIA -->
+        <div class="detalle-botones-galeria">
+            <button class="btn btn-cotizar" onclick="alert('Cotización en desarrollo')">Cotizar</button>
+            <button class="btn btn-carrito" onclick="alert('Agregado al carrito')">Agregar al carrito</button>
+        </div>
+    </div>
+
+    <!-- INFO - LADO DERECHO -->
+    <div class="detalle-info">
+        <div class="detalle-info-card">
+            <h2>Excavadora</h2>
+
+            <div class="detalle-info-item">
+                <div class="detalle-info-label">Tiempo de uso</div>
+                <div class="detalle-info-value">1.250 horas</div>
+            </div>
+
+            <div class="detalle-info-item">
+                <div class="detalle-info-label">Peso operativo</div>
+                <div class="detalle-info-value">3.200 kg</div>
+            </div>
+
+            <div class="detalle-info-item">
+                <div class="detalle-info-label">Profundidad máxima de excavación</div>
+                <div class="detalle-info-value">2,8 m</div>
+            </div>
+
+            <div class="detalle-info-item">
+                <div class="detalle-info-label">Capacidad de cucharón</div>
+                <div class="detalle-info-value">0,12 m³</div>
+            </div>
+
+            <div class="detalle-info-item">
+                <div class="detalle-info-label">Motor</div>
+                <div class="detalle-info-value">Diésel, 24 HP</div>
+            </div>
+
+            <div class="detalle-info-item">
+                <div class="detalle-info-label">Estado</div>
+                <div class="detalle-info-value">Mantenimiento al día, lista para trabajar</div>
+            </div>
+
+            <div class="detalle-info-item">
+                <div class="detalle-info-label">Costo de alquiler</div>
+                <div class="detalle-info-value">$85.000 COP/hora</div>
+            </div>
+
+            <!-- BOTONES INFO -->
+            <div class="detalle-botones-info">
+                <button class="btn-info btn-estado">✓ Ya está agregado</button>
+                <button class="btn-info btn-sacar" onclick="alert('Removido del carrito')">Sacar del carrito</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .detalle-header {
+        max-width: 1200px;
+        margin: 0 auto 30px;
+        padding: 0 40px;
+    }
+
+    .btn-volver {
+        display: inline-block;
+        padding: 10px 20px;
+        background-color: var(--color-orange);
+        color: white;
+        text-decoration: none;
+        border-radius: 5px;
+        font-size: 14px;
+        font-weight: bold;
+        cursor: pointer;
+        border: none;
+        transition: all 0.3s;
+    }
+
+    .btn-volver:hover {
+        background-color: var(--color-red);
+        transform: translateY(-2px);
+    }
+
+    .detalle-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 40px;
+        padding: 0 40px 40px;
+    }
+
+    .detalle-galeria {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .detalle-img-principal {
+        width: 100%;
+        height: 400px;
+        background: #ddd;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .detalle-img-principal img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .detalle-thumbnails {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+
+    .detalle-thumb {
+        width: 100%;
+        height: 100px;
+        background: #ddd;
+        border-radius: 5px;
+        cursor: pointer;
+        overflow: hidden;
+        border: 2px solid transparent;
+        transition: all 0.3s;
+    }
+
+    .detalle-thumb img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .detalle-thumb:hover {
+        border-color: #2196F3;
+    }
+
+    .detalle-thumb.active {
+        border-color: var(--color-orange);
+    }
+
+    .detalle-botones-galeria {
+        display: flex;
+        gap: 15px;
+    }
+
+    .btn {
+        flex: 1;
+        padding: 15px;
+        border: none;
+        border-radius: 25px;
+        font-size: 14px;
+        font-weight: bold;
+        cursor: pointer;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        transition: all 0.3s;
+    }
+
+    .btn-cotizar,
+    .btn-carrito {
+        background-color: var(--color-orange);
+        color: white;
+    }
+
+    .btn-cotizar:hover,
+    .btn-carrito:hover {
+        background-color: var(--color-red);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(255, 152, 0, 0.3);
+    }
+
+    .detalle-info {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .detalle-info-card {
+        background: white;
+        padding: 25px;
+        border-radius: 8px;
+        border: 3px solid var(--color-orange);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .detalle-info-card h2 {
+        font-size: 28px;
+        font-weight: bold;
+        color: #333;
+        margin-bottom: 20px;
+    }
+
+    .detalle-info-item {
+        margin-bottom: 15px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid #eee;
+    }
+
+    .detalle-info-item:last-of-type {
+        margin-bottom: 0;
+        padding-bottom: 0;
+        border-bottom: none;
+    }
+
+    .detalle-info-label {
+        font-size: 12px;
+        color: var(--color-orange);
+        font-weight: bold;
+        text-transform: uppercase;
+        margin-bottom: 5px;
+    }
+
+    .detalle-info-value {
+        font-size: 16px;
+        color: #333;
+        font-weight: bold;
+    }
+
+    .detalle-botones-info {
+        display: flex;
+        gap: 15px;
+        flex-direction: column;
+        margin-top: 10px;
+    }
+
+    .btn-info {
+        padding: 15px;
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: bold;
+        cursor: pointer;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        transition: all 0.3s;
+    }
+
+    .btn-sacar {
+        background-color: var(--color-red);
+        color: white;
+    }
+
+    .btn-sacar:hover {
+        background-color: #d32f2f;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(244, 67, 54, 0.3);
+    }
+
+    .btn-estado {
+        background-color: #4CAF50;
+        color: white;
+        cursor: default;
+    }
+
+    .btn-estado:hover {
+        transform: none;
+        box-shadow: none;
+    }
+
+    @media (max-width: 900px) {
+        .detalle-container {
+            grid-template-columns: 1fr;
+            padding: 0 20px 20px;
+        }
+
+        .detalle-img-principal {
+            height: 300px;
+        }
+
+        .detalle-botones-galeria,
+        .detalle-botones-info {
+            flex-direction: column;
+        }
+
+        .detalle-header {
+            padding: 0 20px;
+        }
+    }
+</style>
+
+<script>
+    function cambiarImagen(elem, src) {
+        document.querySelectorAll('.detalle-thumb').forEach(t => t.classList.remove('active'));
+        elem.classList.add('active');
+        document.getElementById('imgPrincipal').src = src;
+    }
+</script>
+{% endblock %}
