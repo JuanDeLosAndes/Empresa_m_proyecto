@@ -1011,3 +1011,9 @@ main:has(.detalle-container) {
 .detalle-container p {
     margin: 0;
 }
+main:has(.maquinas-container),
+main:has(.detalle-container) {
+    background: #f0f0f0;
+    font-family: Arial, sans-serif;
+    padding: 20px 0;
+}
