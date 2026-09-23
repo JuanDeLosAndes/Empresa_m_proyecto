@@ -1,7 +1,8 @@
 <header class="topbar">
-    <a class="topbar__brand" href="/" aria-label="Maquiservicio Pérez S.A.S. - Inicio">
-        <img class="topbar__logo" src="{{ url_for('static', path='/images/logo/logo-msps.png') }}" alt="Maquiservicio Pérez S.A.S. - Servicio y Alquiler de Equipos de Excavación">
-    </a>
+    <!-- La marca "MSPS" ya viene dibujada en la imagen de fondo del header
+         (static/images/topbar/header-msps.jpg), así que este enlace queda
+         sin imagen: solo es la zona clicable para volver al inicio. -->
+    <a class="topbar__brand" href="/" aria-label="Maquiservicio Pérez S.A.S. - Inicio"></a>
 
     <nav class="topbar__nav" aria-label="Navegación principal">
         {% for item in nav_items %}
@@ -10,6 +11,11 @@
 
         <div class="topbar__auth" data-auth-root>
             {% if sesion %}
+                {% if sesion.tipo == 'persona_natural' %}
+                    <a class="topbar__link" href="/unirse-empresa">Unirse a una empresa</a>
+                {% elif sesion.tipo == 'empresa' %}
+                    <a class="topbar__link" href="/mensajes">Mensajes</a>
+                {% endif %}
                 <span class="topbar__user">Hola, {{ sesion.nombre }}</span>
                 <form action="/logout" method="post" style="display:inline">
                     <button type="submit" class="topbar__link">Cerrar sesión</button>

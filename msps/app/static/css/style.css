@@ -64,11 +64,13 @@ button {
 /* =========================================================
    Topbar (cabecera con imagen de fondo)
    =========================================================
-   El fondo es la franja superior de hero-fondo.png (la que trae dibujado
-   "MSPS" y la línea roja): mide 1600x138, es decir 8.625% del ancho. Como
-   es la MISMA imagen del hero, la cabecera y el hero se unen sin costura
-   (el hero esconde esa misma franja con margin-top: -8.625%).
-   El logo de la empresa queda abajo a la derecha de la línea roja. */
+   El fondo es la imagen dedicada del header (1600x138, "MSPS" + línea
+   roja): static/images/topbar/header-msps.jpg. La imagen del hero
+   (hero-fondo.png) trae esa misma franja dibujada arriba, así que el
+   hero la esconde con margin-top: -8.625% para que no se repita.
+   El enlace de marca (.topbar__brand) queda sin imagen propia porque
+   el "MSPS" ya viene dibujado en el fondo; solo sirve como zona
+   clicable para volver al inicio. */
 
 .topbar {
     position: relative;
@@ -78,22 +80,15 @@ button {
     width: 100%;
     aspect-ratio: 1600 / 138;
     padding: 0 40px;
-    background: #eff0f5 url("../images/hero/hero-fondo.png") left top / 100% auto no-repeat;
+    background: #eff0f5 url("../images/topbar/header-msps.jpg") center / cover no-repeat;
 }
 
 .topbar__brand {
     position: absolute;
-    left: 28.5%;
-    top: 34%;
-    height: 44%;
-    display: flex;
-    align-items: center;
-}
-
-.topbar__logo {
+    top: 0;
+    left: 0;
     height: 100%;
-    width: auto;
-    mix-blend-mode: multiply; /* el PNG del logo tiene fondo blanco: así se funde con el cielo */
+    width: 38%;
 }
 
 /* Nav + hazard-stripe strip */
@@ -107,32 +102,9 @@ button {
     padding: 14px 22px;
 }
 
-.topbar__nav::before,
-.topbar__nav::after {
-    content: "";
-    position: absolute;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background-image: repeating-linear-gradient(
-        115deg,
-        var(--color-orange) 0,
-        var(--color-orange) 9px,
-        transparent 9px,
-        transparent 15px
-    );
-}
-
-.topbar__nav::before {
-    top: 0;
-}
-
-.topbar__nav::after {
-    bottom: 0;
-}
-
-/* Botones del menú: sin líneas separadoras; al pasar el mouse cambian de
-   color y aparece un cuadro que muestra hasta dónde llega cada botón. */
+/* Botones del menú: sin líneas separadoras; al pasar el mouse aparece
+   un cuadro sombreado con un color tenue que muestra hasta dónde llega
+   cada botón. */
 .topbar__link {
     display: flex;
     align-items: center;
@@ -143,7 +115,7 @@ button {
     white-space: nowrap;
     border: 2px solid transparent;
     border-radius: 8px;
-    transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+    transition: color 0.15s ease, background-color 0.15s ease;
 }
 
 .topbar__link.is-active {
@@ -154,7 +126,6 @@ button {
 .topbar__link:focus-visible {
     color: var(--color-orange);
     background-color: rgba(255, 112, 32, 0.12);
-    border-color: var(--color-orange);
     outline: none;
 }
 
@@ -546,26 +517,20 @@ button {
    ========================================================= */
 
 @media (max-width: 1100px) {
-    /* Cabecera en pantallas medianas/pequeñas: franja con la imagen arriba,
-       y debajo el logo y el menú. */
+    /* Cabecera en pantallas medianas/pequeñas: franja con la imagen arriba
+       (ahí va el "MSPS"), y debajo el menú sobre color liso. */
     .topbar {
         display: block;
         aspect-ratio: auto;
         padding: calc(8.625vw + 10px) 20px 14px;
-        /* franja de imagen arriba; lo de abajo (logo + menú) sobre color liso */
         background:
             linear-gradient(#eff0f5, #eff0f5) left bottom / 100% calc(100% - 8.625vw) no-repeat,
-            url("../images/hero/hero-fondo.png") left top / 100% auto no-repeat;
+            url("../images/topbar/header-msps.jpg") left top / 100% auto no-repeat;
     }
 
     .topbar__brand {
-        position: static;
-        height: auto;
-        margin-bottom: 10px;
-    }
-
-    .topbar__logo {
-        height: 38px;
+        width: 100%;
+        height: calc(8.625vw + 10px);
     }
 
     .topbar__nav {
