@@ -32,7 +32,7 @@ def registrar_persona(
     contrasena: str = Form(...),
 ):
     try:
-        nuevo = UsuarioModel.crear_cliente(
+        UsuarioModel.crear_persona_natural(
             nombre=usuario,
             contrasena=contrasena,
             cedula=cedula,
@@ -42,14 +42,10 @@ def registrar_persona(
         # Cédula o correo ya registrados
         return RedirectResponse(url="/?registro=error", status_code=303)
 
-    respuesta = RedirectResponse(url="/?registro=ok", status_code=303)
-    respuesta.set_cookie(
-        SESSION_COOKIE_NAME,
-        firmar_sesion(nuevo.rol, nuevo.id_usuario),
-        httponly=True,
-        samesite="lax",
-    )
-    return respuesta
+    # Sin iniciar sesión automáticamente: el mensaje de "registro exitoso"
+    # se muestra dentro de la pestaña de registro (que solo existe en el
+    # navbar cuando NO hay sesión) y desde ahí la persona pasa al login.
+    return RedirectResponse(url="/?registro=ok", status_code=303)
 
 
 @router.post("/registro/empresa")
@@ -60,7 +56,7 @@ def registrar_empresa(
     contrasena: str = Form(...),
 ):
     try:
-        nueva = EmpresaModel.crear(
+        EmpresaModel.crear(
             nombre=nombre_empresa,
             nit=nit,
             correo=correo,
@@ -70,14 +66,7 @@ def registrar_empresa(
         # NIT o correo ya registrados
         return RedirectResponse(url="/?registro=error", status_code=303)
 
-    respuesta = RedirectResponse(url="/?registro=ok", status_code=303)
-    respuesta.set_cookie(
-        SESSION_COOKIE_NAME,
-        firmar_sesion("empresa", nueva.id_empresa),
-        httponly=True,
-        samesite="lax",
-    )
-    return respuesta
+    return RedirectResponse(url="/?registro=ok", status_code=303)
 
 
 @router.post("/login")

@@ -62,73 +62,47 @@ button {
 }
 
 /* =========================================================
-   Topbar
-   ========================================================= */
+   Topbar (cabecera con imagen de fondo)
+   =========================================================
+   El fondo es la franja superior de hero-fondo.png (la que trae dibujado
+   "MSPS" y la línea roja): mide 1600x138, es decir 8.625% del ancho. Como
+   es la MISMA imagen del hero, la cabecera y el hero se unen sin costura
+   (el hero esconde esa misma franja con margin-top: -8.625%).
+   El logo de la empresa queda abajo a la derecha de la línea roja. */
 
 .topbar {
-    border-bottom: 1px solid var(--color-grey-200);
-}
-
-.topbar__inner {
+    position: relative;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 32px;
-    min-height: var(--topbar-height);
-    padding: 12px 40px;
-    max-width: 1600px;
-    margin: 0 auto;
+    justify-content: flex-end;
+    width: 100%;
+    aspect-ratio: 1600 / 138;
+    padding: 0 40px;
+    background: #eff0f5 url("../images/hero/hero-fondo.png") left top / 100% auto no-repeat;
 }
 
 .topbar__brand {
+    position: absolute;
+    left: 28.5%;
+    top: 34%;
+    height: 44%;
     display: flex;
     align-items: center;
-    gap: 18px;
-    flex-shrink: 0;
-}
-
-.topbar__mark {
-    font-size: 1.6rem;
-    font-weight: 900;
-    letter-spacing: 0.02em;
-    color: var(--color-black);
-    position: relative;
-    padding-bottom: 10px;
-}
-
-.topbar__mark::after {
-    content: "";
-    position: absolute;
-    left: 0;
-    bottom: 0;
-    width: 78px;
-    height: 4px;
-    background: var(--color-red);
-}
-
-.topbar__mark::before {
-    content: "";
-    position: absolute;
-    right: -22px;
-    bottom: -2px;
-    width: 16px;
-    height: 16px;
-    border-top: 4px solid var(--color-red);
-    border-right: 4px solid var(--color-red);
-    transform: skewX(-25deg) translateX(-4px);
 }
 
 .topbar__logo {
-    height: 44px;
+    height: 100%;
     width: auto;
+    mix-blend-mode: multiply; /* el PNG del logo tiene fondo blanco: así se funde con el cielo */
 }
 
 /* Nav + hazard-stripe strip */
 
 .topbar__nav {
     display: flex;
-    align-items: stretch;
+    align-items: center;
     flex-wrap: wrap;
+    gap: 6px;
     position: relative;
     padding: 14px 22px;
 }
@@ -157,36 +131,45 @@ button {
     bottom: 0;
 }
 
+/* Botones del menú: sin líneas separadoras; al pasar el mouse cambian de
+   color y aparece un cuadro que muestra hasta dónde llega cada botón. */
 .topbar__link {
-    position: relative;
     display: flex;
     align-items: center;
-    padding: 0 22px;
+    padding: 10px 18px;
     font-size: 0.98rem;
     font-weight: 700;
     color: var(--color-black);
     white-space: nowrap;
-    border-right: 2px dashed var(--color-orange);
-    transition: color 0.15s ease;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
 }
 
-.topbar__link:first-child {
-    padding-left: 6px;
-}
-
-.topbar__link:hover,
 .topbar__link.is-active {
     color: var(--color-red);
 }
 
-.topbar__auth {
-    display: flex;
-    position: relative;
+.topbar__link:hover,
+.topbar__link:focus-visible {
+    color: var(--color-orange);
+    background-color: rgba(255, 112, 32, 0.12);
+    border-color: var(--color-orange);
+    outline: none;
 }
 
-.topbar__auth .topbar__link:last-child {
-    border-right: none;
-    padding-right: 6px;
+.topbar__user {
+    padding: 0 12px;
+    font-size: 0.98rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.topbar__auth {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    position: relative;
 }
 
 /* =========================================================
@@ -328,21 +311,22 @@ button {
 .hero {
     position: relative;
     width: 100%;
-    max-width: 1600px;
-    margin: 0 auto;
     overflow: hidden;
     isolation: isolate;
 }
 
+/* El margen negativo esconde la franja superior de la imagen (el "MSPS" y la
+   línea roja), porque esa franja ahora es el fondo de la cabecera. */
 .hero__bg {
     width: 100%;
     height: auto;
     display: block;
+    margin-top: -8.625%;
 }
 
 .hero__copy {
     position: absolute;
-    top: 14%;
+    top: 8%;
     left: 4%;
     width: 42%;
     z-index: 2;
@@ -479,8 +463,7 @@ button {
     flex-wrap: wrap;
     gap: 40px;
     justify-content: space-between;
-    max-width: 1600px;
-    margin: 64px auto 0;
+    margin: 64px 0 0;
     padding: 48px 40px;
     background: var(--color-black);
     color: var(--color-grey-200);
@@ -550,8 +533,6 @@ button {
 }
 
 .footer__bottom {
-    max-width: 1600px;
-    margin: 0 auto;
     padding: 18px 40px 32px;
     background: var(--color-black);
     color: var(--color-grey-500);
@@ -564,20 +545,38 @@ button {
    Responsive
    ========================================================= */
 
-@media (max-width: 900px) {
-    .topbar__inner {
-        flex-direction: column;
-        align-items: flex-start;
-        padding: 16px 20px;
+@media (max-width: 1100px) {
+    /* Cabecera en pantallas medianas/pequeñas: franja con la imagen arriba,
+       y debajo el logo y el menú. */
+    .topbar {
+        display: block;
+        aspect-ratio: auto;
+        padding: calc(8.625vw + 10px) 20px 14px;
+        /* franja de imagen arriba; lo de abajo (logo + menú) sobre color liso */
+        background:
+            linear-gradient(#eff0f5, #eff0f5) left bottom / 100% calc(100% - 8.625vw) no-repeat,
+            url("../images/hero/hero-fondo.png") left top / 100% auto no-repeat;
+    }
+
+    .topbar__brand {
+        position: static;
+        height: auto;
+        margin-bottom: 10px;
+    }
+
+    .topbar__logo {
+        height: 38px;
     }
 
     .topbar__nav {
         width: 100%;
         overflow-x: auto;
     }
+}
 
+@media (max-width: 900px) {
     .hero__copy {
-        top: 6%;
+        top: 4%;
         left: 4%;
         width: 55%;
     }
@@ -891,7 +890,6 @@ button {
     background: white;
     padding: 25px;
     border-radius: 8px;
-    border: 3px solid var(--color-orange);
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
@@ -948,18 +946,18 @@ button {
 }
 
 .btn-sacar {
-    background-color: var(--color-red);
+    background-color: var(--color-orange);
     color: white;
 }
 
 .btn-sacar:hover {
-    background-color: #d32f2f;
+    background-color: #e85d0d;
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(244, 67, 54, 0.3);
+    box-shadow: 0 4px 12px rgba(255, 112, 32, 0.35);
 }
 
 .btn-estado {
-    background-color: #4CAF50;
+    background-color: var(--color-orange);
     color: white;
     cursor: default;
 }

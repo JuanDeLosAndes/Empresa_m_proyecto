@@ -1,7 +1,7 @@
-<div class="auth-panel" data-auth-panel="register" hidden>
+<div class="auth-panel" data-auth-panel="register"{% if not registro_ok %} hidden{% endif %}>
     <button type="button" class="auth-panel__close" data-auth-close aria-label="Cerrar">&times;</button>
 
-    <div class="auth-panel__view" data-register-view="choice">
+    <div class="auth-panel__view" data-register-view="choice"{% if registro_ok %} hidden{% endif %}>
         <h3 class="auth-panel__title">Registrarse</h3>
         <p class="auth-panel__subtitle">¿Cómo deseas registrarte?</p>
 
@@ -10,6 +10,15 @@
 
         <div class="auth-panel__links">
             <a href="#" data-auth-switch="login">¿Ya tienes cuenta?</a>
+        </div>
+    </div>
+
+    <div class="auth-panel__view" data-register-view="exito"{% if not registro_ok %} hidden{% endif %}>
+        <h3 class="auth-panel__title">¡Registro exitoso!</h3>
+        <p class="auth-panel__subtitle">Tu cuenta se creó correctamente. Ya puedes iniciar sesión.</p>
+
+        <div class="auth-panel__links">
+            <a href="#" data-auth-switch="login">Iniciar sesión</a>
         </div>
     </div>
 

@@ -1,29 +1,26 @@
 <header class="topbar">
-    <div class="topbar__inner">
-        <a class="topbar__brand" href="/">
-            <span class="topbar__mark">MSPS</span>
-            <img class="topbar__logo" src="{{ url_for('static', path='/images/logo/logo-msps.png') }}" alt="Maquiservicio Pérez S.A.S. - Servicio y Alquiler de Equipos de Excavación">
-        </a>
+    <a class="topbar__brand" href="/" aria-label="Maquiservicio Pérez S.A.S. - Inicio">
+        <img class="topbar__logo" src="{{ url_for('static', path='/images/logo/logo-msps.png') }}" alt="Maquiservicio Pérez S.A.S. - Servicio y Alquiler de Equipos de Excavación">
+    </a>
 
-        <nav class="topbar__nav" aria-label="Navegación principal">
-            {% for item in nav_items %}
-            <a class="topbar__link{% if item.active %} is-active{% endif %}" href="{{ item.href }}">{{ item.label }}</a>
-            {% endfor %}
+    <nav class="topbar__nav" aria-label="Navegación principal">
+        {% for item in nav_items %}
+        <a class="topbar__link{% if item.active %} is-active{% endif %}" href="{{ item.href }}">{{ item.label }}</a>
+        {% endfor %}
 
-            <div class="topbar__auth" data-auth-root>
-                {% if sesion %}
-                    <span class="topbar__link">Hola, {{ sesion.nombre }}</span>
-                    <form action="/logout" method="post" style="display:inline">
-                        <button type="submit" class="topbar__link">Cerrar sesión</button>
-                    </form>
-                {% else %}
-                    <button type="button" class="topbar__link" data-auth-trigger="login">Iniciar sesion</button>
-                    <button type="button" class="topbar__link" data-auth-trigger="register">Registrarse</button>
+        <div class="topbar__auth" data-auth-root>
+            {% if sesion %}
+                <span class="topbar__user">Hola, {{ sesion.nombre }}</span>
+                <form action="/logout" method="post" style="display:inline">
+                    <button type="submit" class="topbar__link">Cerrar sesión</button>
+                </form>
+            {% else %}
+                <button type="button" class="topbar__link" data-auth-trigger="login">Iniciar sesion</button>
+                <button type="button" class="topbar__link" data-auth-trigger="register">Registrarse</button>
 
-                    {% include "components/auth/login_panel.html" %}
-                    {% include "components/auth/register_panel.html" %}
-                {% endif %}
-            </div>
-        </nav>
-    </div>
+                {% include "components/auth/login_panel.html" %}
+                {% include "components/auth/register_panel.html" %}
+            {% endif %}
+        </div>
+    </nav>
 </header>

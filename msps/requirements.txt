@@ -6,5 +6,5 @@ httpx
 python-multipart
 jinja2
 aiofiles
-SQLite3
-SQLite
+
+

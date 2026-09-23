@@ -21,7 +21,7 @@ from app.models.empresa import EmpresaModel
 
 
 class SesionActual(TypedDict):
-    tipo: str  # 'cliente' | 'administrador' | 'empresa'
+    tipo: str  # 'persona_natural' | 'administrador' | 'empresa'
     id: int
     nombre: str
 

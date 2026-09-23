@@ -33,8 +33,6 @@ def _mensaje_desde_query(request: Request) -> dict | None:
         return {"tipo": "exito", "texto": "Inicio de sesión exitoso."}
     if params.get("login") == "error":
         return {"tipo": "error", "texto": "Usuario o contraseña incorrectos."}
-    if params.get("registro") == "ok":
-        return {"tipo": "exito", "texto": "Cuenta creada correctamente."}
     if params.get("registro") == "error":
         return {"tipo": "error", "texto": "No se pudo crear la cuenta (verifica los datos)."}
     return None
@@ -64,6 +62,7 @@ def home(request: Request):
         )
         .with_sesion(obtener_sesion_actual(request))
         .with_mensaje(_mensaje_desde_query(request))
+        .with_registro_ok(request.query_params.get("registro") == "ok")
         .build()
     )
     return templates.TemplateResponse(request, "index.html", context)

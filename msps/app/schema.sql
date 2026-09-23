@@ -1,6 +1,17 @@
-
-
 PRAGMA foreign_keys = ON;
+
+-- ---------------------------------------------------------------------
+-- ROL  (catálogo de roles del sistema)
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS roles (
+    id_rol  INTEGER PRIMARY KEY AUTOINCREMENT,
+    nombre  TEXT NOT NULL UNIQUE
+);
+
+-- El orden importa: 'empresa' debe quedar con id 1 (es el DEFAULT de empresas.id_rol).
+INSERT OR IGNORE INTO roles (nombre) VALUES ('empresa');
+INSERT OR IGNORE INTO roles (nombre) VALUES ('administrador');
+INSERT OR IGNORE INTO roles (nombre) VALUES ('persona_natural');
 
 -- ---------------------------------------------------------------------
 -- EMPRESA
@@ -12,26 +23,43 @@ CREATE TABLE IF NOT EXISTS empresas (
     correo          TEXT NOT NULL UNIQUE,
     direccion       TEXT,
     contrasena_hash TEXT NOT NULL,
-    fecha_registro  TEXT NOT NULL DEFAULT (datetime('now'))
+    fecha_registro  TEXT NOT NULL DEFAULT (datetime('now')),
+    id_rol          INTEGER NOT NULL DEFAULT 1 REFERENCES roles(id_rol)
 );
 
 -- ---------------------------------------------------------------------
--- USUARIO  (incluye a los administradores vía la columna rol)
+-- USUARIO  (cuenta base: la comparten personas naturales y administradores)
 -- ---------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS usuarios (
     id_usuario      INTEGER PRIMARY KEY AUTOINCREMENT,
     nombre          TEXT NOT NULL,
     contrasena_hash TEXT NOT NULL,
-    cedula          TEXT UNIQUE,      -- NULL para administradores
-    correo          TEXT UNIQUE,      -- NULL para administradores
-    telefono        TEXT,
     id_empresa      INTEGER REFERENCES empresas(id_empresa) ON DELETE SET NULL,
-    rol             TEXT NOT NULL DEFAULT 'cliente'
-                        CHECK (rol IN ('cliente', 'administrador')),
+    id_rol          INTEGER NOT NULL REFERENCES roles(id_rol),
     fecha_registro  TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
 CREATE INDEX IF NOT EXISTS idx_usuarios_id_empresa ON usuarios(id_empresa);
+CREATE INDEX IF NOT EXISTS idx_usuarios_id_rol ON usuarios(id_rol);
+
+-- ---------------------------------------------------------------------
+-- PERSONA NATURAL  (datos propios de un usuario con rol persona_natural)
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS personas_naturales (
+    id_persona_natural INTEGER PRIMARY KEY AUTOINCREMENT,
+    id_usuario         INTEGER NOT NULL UNIQUE REFERENCES usuarios(id_usuario) ON DELETE CASCADE,
+    cedula             TEXT NOT NULL UNIQUE,
+    correo             TEXT NOT NULL UNIQUE,
+    telefono           TEXT
+);
+
+-- ---------------------------------------------------------------------
+-- ADMINISTRADOR  (un usuario con rol administrador)
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS administradores (
+    id_administrador INTEGER PRIMARY KEY AUTOINCREMENT,
+    id_usuario       INTEGER NOT NULL UNIQUE REFERENCES usuarios(id_usuario) ON DELETE CASCADE
+);
 
 -- ---------------------------------------------------------------------
 -- CATEGORIA

@@ -13,7 +13,7 @@ from __future__ import annotations
 from app.database import get_connection
 from app.models.categoria import CategoriaModel
 from app.models.maquinaria import MaquinariaModel
-from app.models.usuario import UsuarioModel, ROL_ADMINISTRADOR
+from app.models.usuario import UsuarioModel
 
 _CATEGORIAS = ["Excavadora", "Retroexcavadora", "Volqueta"]
 
@@ -56,8 +56,6 @@ def seed_demo_data() -> None:
     # administrador. Se crea solo si no existe ningún administrador
     # todavía; por seguridad esto NO se expone en ningún formulario
     # público de registro (ver app/models/usuario.py).
-    hay_admin = conn.execute(
-        "SELECT 1 FROM usuarios WHERE rol = ?", (ROL_ADMINISTRADOR,)
-    ).fetchone()
+    hay_admin = conn.execute("SELECT 1 FROM administradores").fetchone()
     if not hay_admin:
         UsuarioModel.crear_administrador(nombre="admin", contrasena="admin123")

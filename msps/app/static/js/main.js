@@ -91,4 +91,14 @@
             closeAllPanels();
         }
     });
+
+    // Tras registrarse, el servidor redirige a /?registro=ok y el panel de
+    // registro llega abierto con el mensaje de éxito. Se limpia la URL para
+    // que al recargar la página el mensaje no vuelva a aparecer.
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("registro") === "ok") {
+        params.delete("registro");
+        const query = params.toString();
+        window.history.replaceState({}, "", window.location.pathname + (query ? "?" + query : ""));
+    }
 })();

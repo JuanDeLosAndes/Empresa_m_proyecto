@@ -14,6 +14,8 @@ from typing import Optional
 from app.database import get_connection
 from app.security import hash_password, verify_password
 
+ROL_EMPRESA = "empresa"
+
 
 @dataclass
 class Empresa:
@@ -45,9 +47,9 @@ class EmpresaModel:
     ) -> Empresa:
         conn = get_connection()
         cursor = conn.execute(
-            """INSERT INTO empresas (nit, nombre, correo, direccion, contrasena_hash)
-               VALUES (?, ?, ?, ?, ?)""",
-            (nit, nombre, correo, direccion, hash_password(contrasena)),
+            """INSERT INTO empresas (nit, nombre, correo, direccion, contrasena_hash, id_rol)
+               VALUES (?, ?, ?, ?, ?, (SELECT id_rol FROM roles WHERE nombre = ?))""",
+            (nit, nombre, correo, direccion, hash_password(contrasena), ROL_EMPRESA),
         )
         conn.commit()
         empresa = EmpresaModel.obtener_por_id(cursor.lastrowid)

@@ -30,6 +30,9 @@ class PageContextBuilder:
             "login_fields": AuthFormFactory.build_login_fields(),
             "persona_fields": AuthFormFactory.build_register_fields("persona_natural"),
             "empresa_fields": AuthFormFactory.build_register_fields("empresa"),
+            # True solo justo después de registrarse: el panel de registro
+            # del navbar se abre mostrando el mensaje de éxito.
+            "registro_ok": False,
         }
 
     def with_title(self, title: str) -> "PageContextBuilder":
@@ -61,6 +64,10 @@ class PageContextBuilder:
 
     def with_mensaje(self, mensaje: dict[str, str] | None) -> "PageContextBuilder":
         self._context["mensaje"] = mensaje
+        return self
+
+    def with_registro_ok(self, registro_ok: bool) -> "PageContextBuilder":
+        self._context["registro_ok"] = registro_ok
         return self
 
     def build(self) -> dict[str, Any]:
