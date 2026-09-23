@@ -16,7 +16,7 @@
     <div class="auth-panel__view" data-register-view="persona" hidden>
         <span class="auth-panel__badge">persona natural</span>
 
-        <form class="auth-panel__form">
+        <form class="auth-panel__form" action="/registro/persona" method="post">
             {% for field in persona_fields %}
             <label class="auth-field">
                 <span class="sr-only">{{ field.label }}</span>
@@ -35,7 +35,7 @@
     <div class="auth-panel__view" data-register-view="empresa" hidden>
         <span class="auth-panel__badge">Empresa</span>
 
-        <form class="auth-panel__form">
+        <form class="auth-panel__form" action="/registro/empresa" method="post">
             {% for field in empresa_fields %}
             <label class="auth-field">
                 <span class="sr-only">{{ field.label }}</span>

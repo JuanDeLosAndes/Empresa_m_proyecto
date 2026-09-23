@@ -4,7 +4,7 @@
     <h3 class="auth-panel__title">Iniciar Sesión:</h3>
     <p class="auth-panel__subtitle">Ingresa tus credenciales para continuar...</p>
 
-    <form class="auth-panel__form">
+    <form class="auth-panel__form" action="/login" method="post">
         {% for field in login_fields %}
         <label class="auth-field">
             <span class="sr-only">{{ field.label }}</span>

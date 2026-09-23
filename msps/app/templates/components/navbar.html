@@ -11,11 +11,18 @@
             {% endfor %}
 
             <div class="topbar__auth" data-auth-root>
-                <button type="button" class="topbar__link" data-auth-trigger="login">Iniciar sesion</button>
-                <button type="button" class="topbar__link" data-auth-trigger="register">Registrarse</button>
+                {% if sesion %}
+                    <span class="topbar__link">Hola, {{ sesion.nombre }}</span>
+                    <form action="/logout" method="post" style="display:inline">
+                        <button type="submit" class="topbar__link">Cerrar sesión</button>
+                    </form>
+                {% else %}
+                    <button type="button" class="topbar__link" data-auth-trigger="login">Iniciar sesion</button>
+                    <button type="button" class="topbar__link" data-auth-trigger="register">Registrarse</button>
 
-                {% include "components/auth/login_panel.html" %}
-                {% include "components/auth/register_panel.html" %}
+                    {% include "components/auth/login_panel.html" %}
+                    {% include "components/auth/register_panel.html" %}
+                {% endif %}
             </div>
         </nav>
     </div>

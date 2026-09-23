@@ -22,6 +22,14 @@ class PageContextBuilder:
                 {"label": "Inicio", "href": "/", "active": False},
                 {"label": "Buscar Maquina", "href": "/maquinas", "active": False},
             ],
+            # El navbar (compartido por TODAS las páginas vía base.html)
+            # necesita estos tres campos para dibujar los formularios de
+            # login/registro, así que se llenan siempre acá y no como un
+            # paso opcional aparte: si una página nueva se olvidara de
+            # pedirlos, los formularios quedarían vacíos en silencio.
+            "login_fields": AuthFormFactory.build_login_fields(),
+            "persona_fields": AuthFormFactory.build_register_fields("persona_natural"),
+            "empresa_fields": AuthFormFactory.build_register_fields("empresa"),
         }
 
     def with_title(self, title: str) -> "PageContextBuilder":
@@ -40,33 +48,19 @@ class PageContextBuilder:
         }
         return self
 
-    def with_auth_forms(self) -> "PageContextBuilder":
-        self._context["login_fields"] = AuthFormFactory.build_login_fields()
-        self._context["persona_fields"] = AuthFormFactory.build_register_fields("persona_natural")
-        self._context["empresa_fields"] = AuthFormFactory.build_register_fields("empresa")
+    def with_categories(self, categories: list[dict[str, Any]]) -> "PageContextBuilder":
+        # Las categorías ya no viven "a mano" acá: el Controlador las
+        # obtiene de CategoriaModel (base de datos) y se las pasa a
+        # este método. El Builder solo arma el contexto, no inventa datos.
+        self._context["categories"] = categories
         return self
 
-    def with_categories(self, categories: list[dict[str, Any]] | None = None) -> "PageContextBuilder":
-        self._context["categories"] = categories or [
-            {
-                "name": "Retroexcavadora",
-                "href": "/maquinas?categoria=retroexcavadora",
-                "image": None,
-                "color": "#2f3b4c",
-            },
-            {
-                "name": "Excavadora",
-                "href": "/maquinas?categoria=excavadora",
-                "image": "/static/images/hero/hero-excavadora.png",
-                "color": "#f5383a",
-            },
-            {
-                "name": "Volqueta",
-                "href": "/maquinas?categoria=volqueta",
-                "image": None,
-                "color": "#ff7020",
-            },
-        ]
+    def with_sesion(self, sesion: dict[str, Any] | None) -> "PageContextBuilder":
+        self._context["sesion"] = sesion
+        return self
+
+    def with_mensaje(self, mensaje: dict[str, str] | None) -> "PageContextBuilder":
+        self._context["mensaje"] = mensaje
         return self
 
     def build(self) -> dict[str, Any]:

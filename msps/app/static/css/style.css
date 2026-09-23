@@ -1017,3 +1017,40 @@ main:has(.detalle-container) {
     font-family: Arial, sans-serif;
     padding: 20px 0;
 }
+
+/* Mensajes de éxito/error tras login o registro (ver home_controller.py) */
+.msps-mensaje {
+    max-width: 1200px;
+    margin: 20px auto 0;
+    padding: 14px 20px;
+    border-radius: 8px;
+    font-weight: bold;
+    text-align: center;
+}
+
+.msps-mensaje--exito {
+    background: #e6f4ea;
+    color: #1e7e34;
+    border: 1px solid #b6e3c4;
+}
+
+.msps-mensaje--error {
+    background: #fdecea;
+    color: #b3261e;
+    border: 1px solid #f5c2be;
+}
+
+/* Placeholder de imagen para máquinas sin foto todavía (catálogo y detalle) */
+.maquinas-card-img--placeholder,
+.detalle-img-principal--placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    width: 100%;
+    background: var(--color-orange);
+    color: white;
+    font-weight: bold;
+    text-align: center;
+    padding: 10px;
+}

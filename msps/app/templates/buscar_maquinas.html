@@ -2,108 +2,61 @@
 
 {% block content %}
 <div class="maquinas-container">
-    <!-- SIDEBAR -->
+    <!-- SIDEBAR: categorías reales (CategoriaModel), ya no fijas en el HTML -->
     <div class="maquinas-sidebar">
         <h3>Categoría:</h3>
-        <div class="categoria active" onclick="filtrarCategoria('Volqueta', this)">
-            <div class="checkbox">✓</div>
-            <label>Volqueta</label>
+        <div class="categoria{% if not categoria_activa %} active{% endif %}" onclick="filtrarCategoria(null, this)">
+            <div class="checkbox">{% if not categoria_activa %}✓{% endif %}</div>
+            <label>Todas</label>
         </div>
-        <div class="categoria" onclick="filtrarCategoria('Excavadora', this)">
-            <div class="checkbox"></div>
-            <label>Excavadora</label>
+        {% for cat in categorias %}
+        <div class="categoria{% if categoria_activa == cat.nombre_categoria %} active{% endif %}" onclick="filtrarCategoria('{{ cat.nombre_categoria }}', this)">
+            <div class="checkbox">{% if categoria_activa == cat.nombre_categoria %}✓{% endif %}</div>
+            <label>{{ cat.nombre_categoria }}</label>
         </div>
-        <div class="categoria" onclick="filtrarCategoria('Retroexcavadora', this)">
-            <div class="checkbox"></div>
-            <label>Retroexcavadora</label>
-        </div>
+        {% endfor %}
     </div>
 
-    <!-- MAIN -->
+    <!-- MAIN: máquinas reales (MaquinariaModel), ya no fijas en el HTML -->
     <div class="maquinas-main">
         <div class="maquinas-search">
             <input type="text" placeholder="Buscar máquina..." onkeyup="filtrarMaquinas()">
         </div>
 
         <div class="maquinas-grid">
-            <!-- MÁQUINA 1 -->
-            <div class="maquinas-card" data-categoria="Excavadora" data-nombre="Excavadora" onclick="irADetalle(1)">
+            {% for maquina in maquinas %}
+            <div class="maquinas-card" data-categoria="{{ maquina.nombre_categoria }}" data-nombre="{{ maquina.marca }} {{ maquina.modelo or '' }}" onclick="irADetalle({{ maquina.id_maquinaria }})">
                 <div class="maquinas-card-img">
-                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect fill='%23FF9800' width='400' height='300'/%3E%3Ctext x='50%25' y='50%25' font-size='24' fill='white' text-anchor='middle' dominant-baseline='middle'%3EExcavadora%3C/text%3E%3C/svg%3E" alt="Excavadora">
+                    <div class="maquinas-card-img--placeholder">{{ maquina.nombre_categoria }}</div>
                 </div>
                 <div class="maquinas-card-body">
-                    <div class="maquinas-card-title">Excavadora</div>
+                    <div class="maquinas-card-title">{{ maquina.marca }} {{ maquina.modelo or '' }}</div>
                     <div class="maquinas-card-spec">
-                        <span class="spec-label">Tiempo de uso:</span> 1.250 horas<br>
-                        <span class="spec-label">Peso:</span> 3.200 kg<br>
-                        <span class="spec-label">Capacidad:</span> 0,12 m³
+                        <span class="spec-label">Categoría:</span> {{ maquina.nombre_categoria }}<br>
+                        <span class="spec-label">Capacidad:</span> {{ maquina.capacidad or "N/D" }}<br>
+                        <span class="spec-label">Costo por hora:</span> ${{ "{:,.0f}".format(maquina.costo_por_hora) }} COP
                     </div>
                 </div>
             </div>
-
-            <!-- MÁQUINA 2 -->
-            <div class="maquinas-card" data-categoria="Excavadora" data-nombre="Excavadora" onclick="irADetalle(2)">
-                <div class="maquinas-card-img">
-                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect fill='%23FF9800' width='400' height='300'/%3E%3Ctext x='50%25' y='50%25' font-size='24' fill='white' text-anchor='middle' dominant-baseline='middle'%3EExcavadora%3C/text%3E%3C/svg%3E" alt="Excavadora">
-                </div>
-                <div class="maquinas-card-body">
-                    <div class="maquinas-card-title">Excavadora</div>
-                    <div class="maquinas-card-spec">
-                        <span class="spec-label">Tiempo de uso:</span> 2.100 horas<br>
-                        <span class="spec-label">Peso:</span> 4.500 kg<br>
-                        <span class="spec-label">Capacidad:</span> 0,15 m³
-                    </div>
-                </div>
-            </div>
-
-            <!-- MÁQUINA 3 -->
-            <div class="maquinas-card" data-categoria="Retroexcavadora" data-nombre="Retroexcavadora" onclick="irADetalle(3)">
-                <div class="maquinas-card-img">
-                       <img src="{{ url_for('static', path='/images/hero/retrox.png') }}" alt="Retroexcavadora">
-                </div>
-                <div class="maquinas-card-body">
-                    <div class="maquinas-card-title">Retroexcavadora</div>
-                    <div class="maquinas-card-spec">
-                        <span class="spec-label">Tiempo de uso:</span> 890 horas<br>
-                        <span class="spec-label">Peso:</span> 2.800 kg<br>
-                        <span class="spec-label">Capacidad:</span> 0,10 m³
-                    </div>
-                </div>
-            </div>
-
-            <!-- MÁQUINA 4 -->
-            <div class="maquinas-card" data-categoria="Volqueta" data-nombre="Volqueta" onclick="irADetalle(4)">
-                <div class="maquinas-card-img">
-                    <img src="{{ url_for('static', path='/images/hero/planchoin.png') }}" alt="Volqueta">
-                </div>
-                <div class="maquinas-card-body">
-                    <div class="maquinas-card-title">Volqueta</div>
-                    <div class="maquinas-card-spec">
-                        <span class="spec-label">Tiempo de uso:</span> 1.650 horas<br>
-                        <span class="spec-label">Peso:</span> 3.800 kg<br>
-                        <span class="spec-label">Capacidad:</span> 0,14 m³
-                    </div>
-                </div>
-            </div>
+            {% else %}
+            <p>No hay máquinas registradas todavía{% if categoria_activa %} en esta categoría{% endif %}.</p>
+            {% endfor %}
         </div>
     </div>
 </div>
 
 <script>
     function filtrarCategoria(cat, elem) {
-        // Marcar categoría como activa
-        document.querySelectorAll('.categoria').forEach(c => {
-            c.classList.remove('active');
-            c.querySelector('.checkbox').textContent = '';
-        });
-        elem.classList.add('active');
-        elem.querySelector('.checkbox').textContent = '✓';
-
-        // Filtrar máquinas por categoría
-        document.querySelectorAll('.maquinas-card').forEach(card => {
-            const categoria = card.dataset.categoria;
-            card.style.display = categoria === cat ? '' : 'none';
-        });
+        // Filtrado en servidor: recarga la página con ?categoria=...
+        // (antes esto solo escondía/mostraba tarjetas fijas con JS; ahora
+        // vuelve a pedirle al controlador la lista real desde la base de datos)
+        const url = new URL(window.location.href);
+        if (cat) {
+            url.searchParams.set('categoria', cat);
+        } else {
+            url.searchParams.delete('categoria');
+        }
+        window.location.href = url.toString();
     }
 
     function filtrarMaquinas() {

@@ -8,6 +8,14 @@ controlador necesitan conocer las reglas de cada tipo de cuenta: solo le
 piden a la fábrica el "producto" (lista de campos) que corresponde.
 Agregar un tercer tipo de cuenta en el futuro (p. ej. "operador") solo
 implica sumar un caso aquí, sin tocar vistas ni controladores.
+
+Nota: el `name` de cada campo debe coincidir con el parámetro que
+recibe la ruta POST correspondiente en app/controllers/auth_controller.py,
+que a su vez lo pasa a app/models/usuario.py o app/models/empresa.py.
+El formulario de empresa antes tenía un campo "usuario" que no existía
+en ninguna columna real de la tabla `empresas`; se reemplazó por
+"correo" (que sí es una columna del diagrama) porque además es lo que
+se usa para iniciar sesión como empresa.
 """
 from __future__ import annotations
 
@@ -29,7 +37,12 @@ class AuthFormFactory:
     @staticmethod
     def build_login_fields() -> list[CampoFormulario]:
         return [
-            {"name": "usuario", "label": "Usuario", "type": "text", "placeholder": "Usuario"},
+            {
+                "name": "identificador",
+                "label": "Usuario",
+                "type": "text",
+                "placeholder": "Usuario, correo o cédula/NIT",
+            },
             {"name": "contrasena", "label": "Contraseña", "type": "password", "placeholder": "Contraseña"},
         ]
 
@@ -44,9 +57,9 @@ class AuthFormFactory:
             ]
         if tipo == "empresa":
             return [
-                {"name": "usuario", "label": "Usuario", "type": "text", "placeholder": "Usuario"},
-                {"name": "contrasena", "label": "Contraseña", "type": "password", "placeholder": "Contraseña"},
                 {"name": "nombre_empresa", "label": "Nombre de la Empresa", "type": "text", "placeholder": "Nombre de la Empresa"},
                 {"name": "nit", "label": "NIT", "type": "text", "placeholder": "NIT"},
+                {"name": "correo", "label": "Correo electrónico", "type": "email", "placeholder": "Correo electrónico"},
+                {"name": "contrasena", "label": "Contraseña", "type": "password", "placeholder": "Contraseña"},
             ]
         raise ValueError(f"Tipo de registro no soportado: {tipo}")

@@ -1,6 +1,9 @@
 {% extends "base.html" %}
 
 {% block content %}
+{% if mensaje %}
+<div class="msps-mensaje msps-mensaje--{{ mensaje.tipo }}">{{ mensaje.texto }}</div>
+{% endif %}
 <section class="hero">
     <img class="hero__bg" src="{{ url_for('static', path='/images/hero/hero-fondo.png') }}" alt="Zona de construcción con maquinaria pesada">
 
