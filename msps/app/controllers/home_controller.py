@@ -1,16 +1,6 @@
 """
 Controlador (la C de MVC) de las rutas públicas de MSPS: home, catálogo
 de máquinas y detalle de máquina.
-
-El controlador solo orquesta: le pide a los Modelos los datos, le pide
-al Builder el contexto de la página y se lo entrega al motor de
-plantillas (Singleton). No conoce los detalles de cómo se arma cada
-formulario, cómo se configura Jinja, ni contiene SQL.
-
-Antes, buscar_maquinas.html y detalle_maquina.html tenían máquinas
-"de mentira" escritas directamente en el HTML (violación de MVC: la
-Vista no debe cargar datos de negocio). Ahora esos datos salen de
-MaquinariaModel / CategoriaModel, que a su vez leen de la base SQLite.
 """
 from fastapi import APIRouter, HTTPException, Request
 
@@ -24,10 +14,7 @@ router = APIRouter()
 
 
 def _mensaje_desde_query(request: Request) -> dict | None:
-    """Traduce los parámetros ?login=ok / ?registro=error, etc. (que
-    ponen los redirects de auth_controller) en un mensaje para la
-    plantilla. Es una decisión de presentación, así que vive en el
-    Controlador, no en el Modelo."""
+    """Traduce los parámetros ?login=ok / ?registro=error, etc."""
     params = request.query_params
     if params.get("login") == "ok":
         return {"tipo": "exito", "texto": "Inicio de sesión exitoso."}

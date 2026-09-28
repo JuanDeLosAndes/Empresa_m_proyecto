@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import sqlite3
 
-from fastapi import APIRouter, Form
+from fastapi import APIRouter, Form, Request
 from fastapi.responses import RedirectResponse
 
 from app.models.usuario import UsuarioModel
@@ -70,7 +70,7 @@ def registrar_empresa(
 
 
 @router.post("/login")
-def login(identificador: str = Form(...), contrasena: str = Form(...)):
+def login(request: Request, identificador: str = Form(...), contrasena: str = Form(...)):
     # El campo "Usuario" del formulario acepta nombre, correo o cédula
     # (personas/administradores) o correo/NIT (empresas): se prueba
     # primero contra Usuario y luego contra Empresa.
@@ -83,6 +83,7 @@ def login(identificador: str = Form(...), contrasena: str = Form(...)):
             httponly=True,
             samesite="lax",
         )
+        request.session.pop("carrito", None)  # cada inicio de sesión empieza con carrito vacío
         return respuesta
 
     empresa = EmpresaModel.autenticar(identificador, contrasena)
@@ -94,13 +95,15 @@ def login(identificador: str = Form(...), contrasena: str = Form(...)):
             httponly=True,
             samesite="lax",
         )
+        request.session.pop("carrito", None)  # cada inicio de sesión empieza con carrito vacío
         return respuesta
 
     return RedirectResponse(url="/?login=error", status_code=303)
 
 
 @router.post("/logout")
-def logout():
+def logout(request: Request):
+    request.session.clear()  # vacía el carrito guardado en la sesión
     respuesta = RedirectResponse(url="/", status_code=303)
     respuesta.delete_cookie(SESSION_COOKIE_NAME)
     return respuesta

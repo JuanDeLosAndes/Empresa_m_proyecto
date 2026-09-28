@@ -1,10 +1,10 @@
-
 from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
+from starlette.middleware.sessions import SessionMiddleware
 
-from app.controllers import auth_controller, home_controller
+from app.controllers import auth_controller, home_controller, carrito_controller
 from app.database import init_db
 from app.seed import seed_demo_data
 
@@ -18,8 +18,10 @@ def create_app() -> FastAPI:
         description="Plataforma de alquiler de maquinaria pesada.",
     )
 
+    # SessionMiddleware
+    app.add_middleware(SessionMiddleware, secret_key="tu-secret-key-super-seguro-cambiar-en-produccion")
+
     # Crea las tablas si no existen y siembra datos de ejemplo
-    # (categorías y máquinas) la primera vez que se levanta la app.
     init_db()
     seed_demo_data()
 
@@ -31,5 +33,6 @@ def create_app() -> FastAPI:
 
     app.include_router(home_controller.router)
     app.include_router(auth_controller.router)
+    app.include_router(carrito_controller.router)
 
     return app
