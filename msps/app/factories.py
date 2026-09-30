@@ -21,7 +21,25 @@ from __future__ import annotations
 
 from typing import Literal, TypedDict
 
+from fastapi import Request
+
+from app.repositories.carrito_repository import (
+    CarritoRepositorioBase,
+    CarritoRepositorioSesion,
+)
+
 TipoRegistro = Literal["persona_natural", "empresa"]
+
+
+def crear_carrito_repositorio(request: Request) -> CarritoRepositorioBase:
+    """Factory Method: centraliza qué implementación de carrito se usa.
+
+    Hoy siempre es CarritoRepositorioSesion. Si el carrito debe
+    sobrevivir más allá de la sesión (por ejemplo, guardado en base de
+    datos ligado al usuario), esta es la única función que cambia;
+    ningún controlador necesita tocarse.
+    """
+    return CarritoRepositorioSesion(request)
 
 
 class CampoFormulario(TypedDict):

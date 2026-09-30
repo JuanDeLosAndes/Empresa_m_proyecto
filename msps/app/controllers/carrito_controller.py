@@ -1,6 +1,13 @@
 """
 Controlador del carrito de compras.
-El carrito se guarda en sesión como lista de {"id": int, "horas": int}.
+
+Principio SOLID aplicado: SRP + DIP. Este controlador solo orquesta
+HTTP (valida lo que llega, verifica sesión de usuario, decide la
+respuesta). No sabe dónde ni cómo se guarda el carrito: eso se lo pide
+a un CarritoRepositorioBase que la fábrica (`crear_carrito_repositorio`
+en app/factories.py) le entrega. Antes, este archivo leía y escribía
+`request.session["carrito"]` directamente; ahora esa responsabilidad
+vive en app/repositories/carrito_repository.py.
 """
 from fastapi import APIRouter, Request, HTTPException
 from fastapi.responses import RedirectResponse
@@ -9,27 +16,9 @@ from app.models.maquinaria import MaquinariaModel
 from app.current_user import obtener_sesion_actual
 from app.builders import PageContextBuilder
 from app.templating import templates
+from app.factories import crear_carrito_repositorio
 
 router = APIRouter()
-
-
-def _leer_carrito(request: Request) -> list:
-    """Lee el carrito de la sesión y lo normaliza (acepta el formato viejo de solo IDs)."""
-    resultado = []
-    for item in request.session.get("carrito", []):
-        if isinstance(item, dict):
-            resultado.append({
-                "id": int(item["id"]),
-                "horas": max(1, int(item.get("horas", 1))),
-            })
-        else:
-            resultado.append({"id": int(item), "horas": 1})
-    return resultado
-
-
-def _guardar_carrito(request: Request, carrito: list) -> None:
-    # Se reasigna la lista completa para que la sesión siempre detecte el cambio
-    request.session["carrito"] = carrito
 
 
 @router.get("/api/verificar-login")
@@ -38,13 +27,15 @@ async def verificar_login(request: Request):
     sesion = obtener_sesion_actual(request)
     return {"logueado": sesion is not None}
 
+
 @router.get("/api/carrito/cantidad")
 async def cantidad_carrito(request: Request):
     """Devuelve cuántas máquinas hay en el carrito (0 si no hay sesión)"""
     sesion = obtener_sesion_actual(request)
     if not sesion:
         return {"cantidad": 0}
-    return {"cantidad": len(_leer_carrito(request))}
+    repositorio = crear_carrito_repositorio(request)
+    return {"cantidad": repositorio.contar()}
 
 
 @router.post("/api/carrito/agregar")
@@ -56,22 +47,16 @@ async def agregar_carrito(request: Request, data: dict):
 
     try:
         id_maquinaria = int(data.get("id_maquinaria"))
-        horas = max(1, int(data.get("horas", 1)))
+        horas = int(data.get("horas", 1))
     except (TypeError, ValueError):
         raise HTTPException(status_code=400, detail="Datos inválidos")
 
     if not MaquinariaModel.obtener_por_id(id_maquinaria):
         raise HTTPException(status_code=404, detail="Máquina no encontrada")
 
-    carrito = _leer_carrito(request)
-    for item in carrito:
-        if item["id"] == id_maquinaria:
-            item["horas"] = horas
-            break
-    else:
-        carrito.append({"id": id_maquinaria, "horas": horas})
+    repositorio = crear_carrito_repositorio(request)
+    repositorio.agregar(id_maquinaria, horas)
 
-    _guardar_carrito(request, carrito)
     return {"status": "ok", "mensaje": "Agregado al carrito"}
 
 
@@ -84,15 +69,13 @@ async def actualizar_carrito(request: Request, data: dict):
 
     try:
         id_maquinaria = int(data.get("id_maquinaria"))
-        horas = max(1, int(data.get("horas", 1)))
+        horas = int(data.get("horas", 1))
     except (TypeError, ValueError):
         raise HTTPException(status_code=400, detail="Datos inválidos")
 
-    carrito = _leer_carrito(request)
-    for item in carrito:
-        if item["id"] == id_maquinaria:
-            item["horas"] = horas
-    _guardar_carrito(request, carrito)
+    repositorio = crear_carrito_repositorio(request)
+    repositorio.actualizar_horas(id_maquinaria, horas)
+
     return {"status": "ok"}
 
 
@@ -108,8 +91,9 @@ async def eliminar_carrito(request: Request, data: dict):
     except (TypeError, ValueError):
         raise HTTPException(status_code=400, detail="Datos inválidos")
 
-    carrito = [i for i in _leer_carrito(request) if i["id"] != id_maquinaria]
-    _guardar_carrito(request, carrito)
+    repositorio = crear_carrito_repositorio(request)
+    repositorio.eliminar(id_maquinaria)
+
     return {"status": "ok"}
 
 
@@ -120,11 +104,13 @@ async def ver_carrito(request: Request):
     if not sesion:
         return RedirectResponse(url="/login?next=/carrito", status_code=302)
 
+    repositorio = crear_carrito_repositorio(request)
+
     items = []
-    for item in _leer_carrito(request):
-        maquina = MaquinariaModel.obtener_por_id(item["id"])
+    for item in repositorio.leer():
+        maquina = MaquinariaModel.obtener_por_id(item.id_maquinaria)
         if maquina:
-            items.append({"maquina": maquina, "horas": item["horas"]})
+            items.append({"maquina": maquina, "horas": item.horas})
 
     context = (
         PageContextBuilder()

@@ -62,33 +62,46 @@ button {
 }
 
 /* =========================================================
-   Topbar (cabecera con imagen de fondo)
-   =========================================================
-   El fondo es la imagen dedicada del header (1600x138, "MSPS" + línea
-   roja): static/images/topbar/header-msps.jpg. La imagen del hero
-   (hero-fondo.png) trae esa misma franja dibujada arriba, así que el
-   hero la esconde con margin-top: -8.625% para que no se repita.
-   El enlace de marca (.topbar__brand) queda sin imagen propia porque
-   el "MSPS" ya viene dibujado en el fondo; solo sirve como zona
-   clicable para volver al inicio. */
+   Topbar (cabecera con el logo real de la empresa)
+   ========================================================= */
 
 .topbar {
-    position: relative;
     display: flex;
     align-items: center;
-    justify-content: flex-end;
+    justify-content: space-between;
     width: 100%;
-    aspect-ratio: 1600 / 138;
-    padding: 0 40px;
-    background: #eff0f5 url("../images/topbar/header-msps.jpg") center / cover no-repeat;
+    padding: 10px 40px;
+    background: #eff0f5;
 }
 
 .topbar__brand {
-    position: absolute;
-    top: 0;
-    left: 0;
+    display: flex;
+    align-items: center;
+    height: 64px;
+}
+
+.topbar__logo {
     height: 100%;
-    width: 38%;
+    width: auto;
+}
+
+@media (max-width: 800px) {
+    .topbar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 14px 20px;
+    }
+
+    .topbar__brand {
+        height: 44px;
+    }
+
+    .topbar__nav {
+        width: 100%;
+        overflow-x: auto;
+        justify-content: flex-end;
+    }
 }
 
 /* Nav + hazard-stripe strip */
@@ -282,17 +295,18 @@ button {
 .hero {
     position: relative;
     width: 100%;
+    aspect-ratio: 1119 / 468;
     overflow: hidden;
     isolation: isolate;
 }
 
-/* El margen negativo esconde la franja superior de la imagen (el "MSPS" y la
-   línea roja), porque esa franja ahora es el fondo de la cabecera. */
 .hero__bg {
+    position: absolute;
+    inset: 0;
     width: 100%;
-    height: auto;
-    display: block;
-    margin-top: -8.625%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.6;
 }
 
 .hero__copy {
@@ -328,12 +342,13 @@ button {
 
 .hero__excavator {
     position: absolute;
-    right: -1%;
+    right: 2%;
     bottom: 0;
-    width: 54%;
-    height: auto;
+    height: 92%;
+    width: auto;
     z-index: 3;
-    filter: drop-shadow(0 18px 18px rgba(0, 0, 0, 0.18));
+    filter: drop-shadow(0 8px 10px rgba(0, 0, 0, 0.15));
+    opacity: 5.0;
 }
 
 /* =========================================================
@@ -516,29 +531,6 @@ button {
    Responsive
    ========================================================= */
 
-@media (max-width: 1100px) {
-    /* Cabecera en pantallas medianas/pequeñas: franja con la imagen arriba
-       (ahí va el "MSPS"), y debajo el menú sobre color liso. */
-    .topbar {
-        display: block;
-        aspect-ratio: auto;
-        padding: calc(8.625vw + 10px) 20px 14px;
-        background:
-            linear-gradient(#eff0f5, #eff0f5) left bottom / 100% calc(100% - 8.625vw) no-repeat,
-            url("../images/topbar/header-msps.jpg") left top / 100% auto no-repeat;
-    }
-
-    .topbar__brand {
-        width: 100%;
-        height: calc(8.625vw + 10px);
-    }
-
-    .topbar__nav {
-        width: 100%;
-        overflow-x: auto;
-    }
-}
-
 @media (max-width: 900px) {
     .hero__copy {
         top: 4%;
@@ -551,7 +543,8 @@ button {
     }
 
     .hero__excavator {
-        width: 62%;
+        height: 80%;
+        width: auto;
     }
 
     .categories {

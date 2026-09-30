@@ -20,6 +20,7 @@ from fastapi.responses import RedirectResponse
 from app.models.usuario import UsuarioModel
 from app.models.empresa import EmpresaModel
 from app.security import firmar_sesion, SESSION_COOKIE_NAME
+from app.factories import crear_carrito_repositorio
 
 router = APIRouter()
 
@@ -83,7 +84,7 @@ def login(request: Request, identificador: str = Form(...), contrasena: str = Fo
             httponly=True,
             samesite="lax",
         )
-        request.session.pop("carrito", None)  # cada inicio de sesión empieza con carrito vacío
+        crear_carrito_repositorio(request).vaciar()  # cada inicio de sesión empieza con carrito vacío
         return respuesta
 
     empresa = EmpresaModel.autenticar(identificador, contrasena)
@@ -95,7 +96,7 @@ def login(request: Request, identificador: str = Form(...), contrasena: str = Fo
             httponly=True,
             samesite="lax",
         )
-        request.session.pop("carrito", None)  # cada inicio de sesión empieza con carrito vacío
+        crear_carrito_repositorio(request).vaciar()  # cada inicio de sesión empieza con carrito vacío
         return respuesta
 
     return RedirectResponse(url="/?login=error", status_code=303)
@@ -103,7 +104,7 @@ def login(request: Request, identificador: str = Form(...), contrasena: str = Fo
 
 @router.post("/logout")
 def logout(request: Request):
-    request.session.clear()  # vacía el carrito guardado en la sesión
+    request.session.clear()  # vacía el carrito guardado en la sesión (y todo lo demás)
     respuesta = RedirectResponse(url="/", status_code=303)
     respuesta.delete_cookie(SESSION_COOKIE_NAME)
     return respuesta
