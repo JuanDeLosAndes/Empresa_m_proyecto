@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block content %}
+{% if mensaje %}
+<div class="msps-mensaje msps-mensaje--{{ mensaje.tipo }}">{{ mensaje.texto }}</div>
+{% endif %}
+<section class="hero">
+   <img class="hero__bg" src="{{ url_for('static', path='/images/hero/fondo2.png') }}" alt="Zona de construcción con maquinaria pesada">
+
+    <div class="hero__copy">
+        <h1 class="hero__headline">
+            {{ hero.headline_lines[0] }} <span class="hero__headline-de">DE</span><br>
+            {{ hero.headline_lines[1] }}<br>
+            {{ hero.headline_lines[2] }}
+        </h1>
+        <p class="hero__subtitle">{{ hero.subtitle }}</p>
+    </div>
+
+    <img class="hero__excavator" src="{{ url_for('static', path='/images/hero/hero-excavadora.png') }}?v=2" alt="Excavadora Link-Belt de Maquiservicio Pérez">
+</section>
+
+<section class="categories" id="categorias">
+    <div class="categories__heading">
+        <h2>Categorías</h2>
+        <span class="categories__underline"></span>
+        <p>Busca lo que necesitas</p>
+    </div>
+
+    <div class="categories__grid">
+        {% for category in categories %}
+        <a class="category-card" href="{{ category.href }}" style="--category-color: {{ category.color }};">
+            {% if category.image %}
+            <img class="category-card__image" src="{{ category.image }}" alt="{{ category.name }}">
+            {% endif %}
+            <span class="category-card__label">{{ category.name }}</span>
+        </a>
+        {% endfor %}
+
+        <a class="category-card category-card--ghost" href="/maquinas">Ver todo</a>
+    </div>
+</section>
+{% endblock %}

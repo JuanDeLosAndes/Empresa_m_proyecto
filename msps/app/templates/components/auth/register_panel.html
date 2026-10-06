@@ -1,0 +1,62 @@
+<div class="auth-panel" data-auth-panel="register"{% if not registro_ok %} hidden{% endif %}>
+    <button type="button" class="auth-panel__close" data-auth-close aria-label="Cerrar">&times;</button>
+
+    <div class="auth-panel__view" data-register-view="choice"{% if registro_ok %} hidden{% endif %}>
+        <h3 class="auth-panel__title">Registrarse</h3>
+        <p class="auth-panel__subtitle">¿Cómo deseas registrarte?</p>
+
+        <button type="button" class="auth-field auth-field--choice" data-register-select="persona">Persona natural</button>
+        <button type="button" class="auth-field auth-field--choice" data-register-select="empresa">Empresa</button>
+
+        <div class="auth-panel__links">
+            <a href="#" data-auth-switch="login">¿Ya tienes cuenta?</a>
+        </div>
+    </div>
+
+    <div class="auth-panel__view" data-register-view="exito"{% if not registro_ok %} hidden{% endif %}>
+        <h3 class="auth-panel__title">¡Registro exitoso!</h3>
+        <p class="auth-panel__subtitle">Tu cuenta se creó correctamente. Ya puedes iniciar sesión.</p>
+
+        <div class="auth-panel__links">
+            <a href="#" data-auth-switch="login">Iniciar sesión</a>
+        </div>
+    </div>
+
+    <div class="auth-panel__view" data-register-view="persona" hidden>
+        <span class="auth-panel__badge">persona natural</span>
+
+        <form class="auth-panel__form" action="/registro/persona" method="post">
+            {% for field in persona_fields %}
+            <label class="auth-field">
+                <span class="sr-only">{{ field.label }}</span>
+                <input type="{{ field.type }}" name="{{ field.name }}" placeholder="{{ field.placeholder }}" autocomplete="off" required>
+            </label>
+            {% endfor %}
+            <button type="submit" class="auth-field auth-field--submit">Crear cuenta</button>
+        </form>
+
+        <div class="auth-panel__links">
+            <a href="#" data-register-select="choice">‹ Cambiar tipo de cuenta</a>
+            <a href="#" data-auth-switch="login">¿Ya tienes cuenta?</a>
+        </div>
+    </div>
+
+    <div class="auth-panel__view" data-register-view="empresa" hidden>
+        <span class="auth-panel__badge">Empresa</span>
+
+        <form class="auth-panel__form" action="/registro/empresa" method="post">
+            {% for field in empresa_fields %}
+            <label class="auth-field">
+                <span class="sr-only">{{ field.label }}</span>
+                <input type="{{ field.type }}" name="{{ field.name }}" placeholder="{{ field.placeholder }}" autocomplete="off" required>
+            </label>
+            {% endfor %}
+            <button type="submit" class="auth-field auth-field--submit">Crear cuenta</button>
+        </form>
+
+        <div class="auth-panel__links">
+            <a href="#" data-register-select="choice">‹ Cambiar tipo de cuenta</a>
+            <a href="#" data-auth-switch="login">¿Ya tienes cuenta?</a>
+        </div>
+    </div>
+</div>

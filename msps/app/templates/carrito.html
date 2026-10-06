@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="carrito-container">
+    <div class="carrito-header">
+        <button class="btn-volver" onclick="window.location.href='/maquinas'">← Volver</button>
+        <h1>Mi Carrito</h1>
+    </div>
+
+    {% if carrito %}
+    <div class="carrito-content">
+        <div class="carrito-items">
+            {% for item in carrito %}
+            <div class="carrito-item">
+                <div class="carrito-item-info">
+                    <h3>{{ item.maquina.marca }} {{ item.maquina.modelo or '' }}</h3>
+                    <p><strong>Categoría:</strong> {{ item.maquina.nombre_categoria }}</p>
+                    <p><strong>Capacidad:</strong> {{ item.maquina.capacidad or "N/D" }}</p>
+                    <p><strong>Placa:</strong> {{ item.maquina.placa }}</p>
+
+                    <!-- CANTIDAD DE HORAS -->
+                    <div class="carrito-cantidad">
+                        <label>Horas de alquiler:</label>
+                        <input type="number" min="1" value="{{ item.horas }}" class="horas-input" data-id="{{ item.maquina.id_maquinaria }}" data-precio="{{ item.maquina.costo_por_hora or 0 }}">
+                    </div>
+                </div>
+
+                <div class="carrito-item-total">
+                    <div class="total-precio">${{ "{:,.0f}".format((item.maquina.costo_por_hora or 0) * item.horas) }} COP</div>
+                    <button class="btn-eliminar" data-id="{{ item.maquina.id_maquinaria }}">
+                        ✕ Eliminar
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- RESUMEN -->
+        <div class="carrito-resumen">
+            <h2>Resumen</h2>
+            <div class="resumen-item">
+                <span>Subtotal:</span>
+                <span id="subtotal">$0</span>
+            </div>
+            <div class="resumen-item">
+                <span>Impuesto (19%):</span>
+                <span id="impuesto">$0</span>
+            </div>
+            <div class="resumen-total">
+                <span>Total:</span>
+                <span id="total">$0</span>
+            </div>
+
+            <button class="btn btn-pagar" onclick="irAPago()">Proceder al pago</button>
+            <button class="btn btn-seguir" onclick="window.location.href='/maquinas'">Seguir comprando</button>
+        </div>
+    </div>
+
+    {% else %}
+    <div class="carrito-vacio">
+        <p>Tu carrito está vacío</p>
+        <button class="btn" onclick="window.location.href='/maquinas'">Ir a máquinas</button>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+    function formatoPesos(valor) {
+        return '$' + valor.toLocaleString('es-CO', {maximumFractionDigits: 0});
+    }
+
+    function eliminarDelCarrito(maquinaId) {
+        if (!confirm('¿Eliminar esta máquina del carrito?')) return;
+
+        fetch('/api/carrito/eliminar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin',
+            body: JSON.stringify({ id_maquinaria: maquinaId })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'ok') {
+                window.location.reload();
+            }
+        })
+        .catch(err => {
+            console.error('Error eliminar:', err);
+            alert('Error al eliminar del carrito');
+        });
+    }
+
+    function guardarHoras(maquinaId, horas) {
+        fetch('/api/carrito/actualizar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin',
+            body: JSON.stringify({ id_maquinaria: maquinaId, horas: horas })
+        }).catch(err => console.error('Error actualizar horas:', err));
+    }
+
+    function irAPago() {
+        window.location.href = '/checkout';
+    }
+
+    function calcularTotales() {
+        let subtotal = 0;
+        document.querySelectorAll('.carrito-item').forEach(item => {
+            const input = item.querySelector('.horas-input');
+            const precio = parseFloat(input.dataset.precio) || 0;
+            const horas = parseInt(input.value) || 1;
+            const totalItem = precio * horas;
+            subtotal += totalItem;
+            item.querySelector('.total-precio').textContent = formatoPesos(totalItem) + ' COP';
+        });
+
+        const impuesto = subtotal * 0.19;
+        const total = subtotal + impuesto;
+
+        document.getElementById('subtotal').textContent = formatoPesos(subtotal);
+        document.getElementById('impuesto').textContent = formatoPesos(impuesto);
+        document.getElementById('total').textContent = formatoPesos(total);
+    }
+
+    document.querySelectorAll('.btn-eliminar').forEach(btn => {
+        btn.addEventListener('click', () => eliminarDelCarrito(parseInt(btn.dataset.id)));
+    });
+
+    document.querySelectorAll('.horas-input').forEach(input => {
+        input.addEventListener('input', calcularTotales);
+        input.addEventListener('change', () => {
+            const horas = Math.max(1, parseInt(input.value) || 1);
+            input.value = horas;
+            calcularTotales();
+            guardarHoras(parseInt(input.dataset.id), horas);
+        });
+    });
+
+    calcularTotales();
+</script>
+{% endblock %}
