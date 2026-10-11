@@ -1,15 +1,4 @@
-"""Configuración de pruebas.
 
-Por defecto las pruebas usan `mongomock` (MongoDB simulado en memoria, incluido
-GridFS), así que corren sin instalar ningún servidor.
-
-Para probar contra un MongoDB REAL, define antes de ejecutar pytest:
-    MSPS_TEST_MONGO_URI=mongodb://localhost:27017
-Siempre se usa una base con nombre único (msps_test_xxxx) que se borra al final.
-
-La conexión es un Singleton que lee el entorno la primera vez que se crea, por
-eso todo se fija ANTES de importar la app.
-"""
 import os
 import sys
 import uuid

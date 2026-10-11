@@ -1,20 +1,4 @@
-"""
-Importa las fotos originales al sitio según el catálogo.
 
-Uso (desde la carpeta msps/):
-    python -m tools.importar_imagenes --origen "ruta/a/las/fotos"
-
-Para cada imagen de app/catalogo_maquinas.py busca el archivo original
-en --origen y lo guarda como app/seed_data/imagenes_maquinas/<slug>/NN.jpg
-(el mismo nombre que quedó registrado en el documento). Al arrancar la app,
-el seed sube esas fotos a MongoDB (GridFS); desde ahí las sirve el sitio.
-
-Además:
-- Corrige la orientación y ELIMINA los metadatos EXIF (incluye GPS).
-- Reduce a 1400 px de lado mayor (las fotos de celular pesan 1-3 MB).
-- Avisa de fotos en --origen que el catálogo no usa (posibles máquinas
-  nuevas por agregar o fotos repetidas).
-"""
 from __future__ import annotations
 
 import argparse
@@ -29,10 +13,6 @@ DESTINO = Path(__file__).resolve().parent.parent / "app" / "seed_data" / "imagen
 LADO_MAXIMO = 1400
 CALIDAD_JPEG = 82
 
-# Recortes (izq, arriba, der, abajo) como fracción 0-1 de la imagen original.
-# La foto del Komatsu PC60 trae estampada la dirección y la fecha de captura
-# (marca de agua de la cámara) en la esquina inferior; se recorta para no
-# publicar una ubicación.
 RECORTES: dict[str, tuple[float, float, float, float]] = {
     "WhatsApp Image 2026-09-23 at 9.23.53 AM.jpeg": (0.0, 0.0, 1.0, 0.78),
 }

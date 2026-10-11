@@ -1,9 +1,0 @@
-fastapi
-uvicorn
-gunicorn
-python-dotenv
-httpx
-python-multipart
-jinja2
-aiofiles
-pymongo
