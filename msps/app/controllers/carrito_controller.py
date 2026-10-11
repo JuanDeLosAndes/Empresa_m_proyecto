@@ -1,3 +1,13 @@
+# ======================================================================
+# QUÉ HACE
+#   El carrito y el pago. API en JSON: GET /api/verificar-login, GET
+#   /api/carrito/cantidad, POST /api/carrito/agregar, /actualizar y /eliminar.
+#   Páginas: GET /carrito y GET /checkout.
+# HASTA DÓNDE LLEGA (y qué NO hace)
+#   Valida la petición y la sesión. No sabe dónde se guarda el carrito (eso lo decide
+#   el repositorio). OJO: /checkout solo muestra la página; todavía NO crea
+#   alquileres ni facturas.
+# ======================================================================
 """
 Controlador del carrito de compras.
 
@@ -140,3 +150,29 @@ async def checkout(request: Request):
     )
 
     return templates.TemplateResponse(request, "checkout.html", context)
+
+# ======================================================================
+# CÓMO LO HACE (en concreto)
+#   - Todas las rutas empiezan con obtener_sesion_actual(request). Sin sesión:
+#     agregar, actualizar y eliminar responden 401; verificar-login responde
+#     {'logueado': False} y cantidad responde {'cantidad': 0}; /carrito y /checkout
+#     redirigen a /login?next=... (OJO: esa dirección todavía no existe como página y
+#     devuelve 405; solo existe POST /login).
+#   - agregar: convierte id_maquinaria y horas a int (si falla, 400), comprueba con
+#     MaquinariaModel.obtener_por_id que la máquina existe (404 si no) y llama
+#     repositorio.agregar(id, horas).
+#   - ver_carrito: recorre repositorio.leer(), busca cada máquina con
+#     MaquinariaModel.obtener_por_id y arma la lista [{maquina, horas}] para
+#     carrito.html.
+#   - Aviso: agregar_carrito no revisa si la tarifa es 0; el bloqueo 'Solo por
+#     cotización' es solo visual (está en detalle_maquina.html).
+# USA
+#   current_user.py, models/maquinaria.py, factories.crear_carrito_repositorio,
+#   builders.py, templating.py.
+# DÓNDE SE LLAMA
+#   app/__init__.py: include_router(carrito_controller.router).
+#   El navegador con fetch(): detalle_maquina.html (/api/verificar-login,
+#   /api/carrito/agregar, /api/carrito/cantidad), buscar_maquinas.html
+#   (/api/carrito/cantidad) y carrito.html (/api/carrito/eliminar,
+#   /api/carrito/actualizar; luego navega a /checkout).
+# ======================================================================

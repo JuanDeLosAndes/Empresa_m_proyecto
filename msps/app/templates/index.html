@@ -30,7 +30,7 @@
         {% for category in categories %}
         <a class="category-card" href="{{ category.href }}" style="--category-color: {{ category.color }};">
             {% if category.image %}
-            <img class="category-card__image" src="{{ category.image }}" alt="{{ category.name }}">
+            <img class="category-card__image{% if category.image_foto %} category-card__image--foto{% endif %}" src="{{ category.image }}" alt="{{ category.name }}">
             {% endif %}
             <span class="category-card__label">{{ category.name }}</span>
         </a>

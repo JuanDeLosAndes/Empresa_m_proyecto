@@ -1,3 +1,11 @@
+# ======================================================================
+# QUÉ HACE
+#   Responde la pregunta '¿quién está logueado en esta petición?': lee la cookie
+#   msps_session, valida su firma y busca a la persona o empresa en la base.
+# HASTA DÓNDE LLEGA (y qué NO hace)
+#   Solo CONSULTA: devuelve un diccionario {tipo, id, nombre} o None. No inicia ni
+#   cierra sesión (eso es de auth_controller.py) y no sabe de HTML.
+# ======================================================================
 """
 Resuelve quién está autenticado en la sesión actual a partir de la
 cookie firmada. Usado por los Controladores para decidir qué le pasan
@@ -42,3 +50,18 @@ def obtener_sesion_actual(request: Request) -> Optional[SesionActual]:
     if not usuario or usuario.rol != tipo:
         return None
     return {"tipo": usuario.rol, "id": usuario.id_usuario, "nombre": usuario.nombre}
+
+# ======================================================================
+# CÓMO LO HACE (en concreto)
+#   - request.cookies.get('msps_session') -> security.leer_sesion(...) -> (tipo, id).
+#   - Si tipo == 'empresa': EmpresaModel.obtener_por_id(id).
+#   - Si no: UsuarioModel.obtener_por_id(id) y exige que usuario.rol == tipo (así una
+#     cookie de persona no sirve para hacerse pasar por administrador).
+#   - Si algo no cuadra devuelve None (= visitante sin sesión).
+# USA
+#   app/security.py, app/models/usuario.py, app/models/empresa.py.
+# DÓNDE SE LLAMA
+#   controllers/home_controller.py: home, buscar_maquinas y detalle_maquina (para
+#   mostrar el nombre en el menú).
+#   controllers/carrito_controller.py: todas sus rutas (para exigir sesión).
+# ======================================================================

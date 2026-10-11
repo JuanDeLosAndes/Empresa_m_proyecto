@@ -1,3 +1,12 @@
+# ======================================================================
+# QUÉ HACE
+#   Lee y guarda en MongoDB el documento de cada máquina (ficha técnica + referencias
+#   a sus fotos), colección `maquinas`.
+# HASTA DÓNDE LLEGA (y qué NO hace)
+#   Solo traduce entre MaquinaDocumento y la colección. No guarda los bytes de las
+#   fotos (imagen_maquina_repository.py) ni arma documentos (maquina_documento.py).
+#   Si MongoDB falla, las LECTURAS devuelven vacío; la ESCRITURA sí lanza el error.
+# ======================================================================
 """
 Repositorio de documentos de máquinas (ficha técnica + referencias a imágenes)
 sobre MongoDB: colección `maquinas`, un documento por máquina.
@@ -49,6 +58,10 @@ class MaquinaDocumentosLector(ABC):
 
     @abstractmethod
     def portadas_por_placa(self) -> dict[str, ImagenMaquina]: ...
+
+    @abstractmethod
+    def portadas_por_categoria(self) -> dict[str, ImagenMaquina]:
+        """Una foto de portada de alguna máquina de cada categoría."""
 
 
 class MaquinaDocumentosEscritor(ABC):
@@ -108,6 +121,20 @@ class MaquinaDocumentosMongo(MaquinaDocumentosLector, MaquinaDocumentosEscritor)
                     break
         return portadas
 
+    @_lectura_tolerante(dict)
+    def portadas_por_categoria(self) -> dict[str, ImagenMaquina]:
+        portadas: dict[str, ImagenMaquina] = {}
+        filas = self._col.find({}, {"_id": 0, "slug": 1, "identidad.categoria": 1, "imagenes": 1})
+        for fila in sorted(filas, key=lambda f: f["slug"]):  # orden fijo: siempre la misma foto
+            categoria = fila["identidad"]["categoria"]
+            if categoria in portadas:
+                continue
+            for imagen in fila.get("imagenes", []):
+                if imagen.get("portada"):
+                    portadas[categoria] = ImagenMaquina.from_document(imagen)
+                    break
+        return portadas
+
     def guardar(self, documento: MaquinaDocumento) -> bool:
         nuevo = documento.to_document()
         existente = self._col.find_one({"slug": documento.slug}, {"_id": 0})
@@ -121,3 +148,24 @@ class MaquinaDocumentosMongo(MaquinaDocumentosLector, MaquinaDocumentosEscritor)
             # Otro worker lo insertó en el mismo instante: se reintenta como reemplazo.
             self._col.replace_one({"slug": documento.slug}, nuevo)
         return True
+
+# ======================================================================
+# CÓMO LO HACE (en concreto)
+#   - Interfaces separadas: MaquinaDocumentosLector (obtener_por_placa, listar,
+#     portadas_por_placa, portadas_por_categoria) y MaquinaDocumentosEscritor
+#     (guardar).
+#   - obtener_por_placa: find_one({'placa': ...}, {'_id': 0}). portadas_por_placa:
+#     proyección de placa + imagenes y busca la imagen con portada=True.
+#     portadas_por_categoria: ordena por slug y toma la primera portada de cada
+#     categoría.
+#   - guardar: compara con lo que ya hay (find_one por slug) y solo si cambió hace
+#     replace_one(..., upsert=True). asegurar_indices crea índice único en slug e
+#     índice en placa.
+#   - El decorador _lectura_tolerante captura PyMongoError, lo registra en el log y
+#     devuelve un valor vacío.
+# USA
+#   pymongo, app/documentos/maquina_documento.py (to_document / from_document).
+# DÓNDE SE LLAMA
+#   factories.crear_maquina_documentos_repositorio, usada por home_controller.py
+#   (lecturas) y seed.py (asegurar_indices y guardar).
+# ======================================================================

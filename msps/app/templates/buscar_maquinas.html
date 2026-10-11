@@ -30,14 +30,8 @@
                     {% set portada = portadas.get(maquina.placa) %}
                     {% if portada %}
                     <img src="{{ url_for('imagen_maquina', archivo=portada.archivo) }}" alt="{{ portada.alt }}" loading="lazy">
-                    {% elif maquina.nombre_categoria == 'Excavadora' %}
-                    <img src="{{ url_for('static', path='/images/hero/retro.jpeg') }}" alt="Excavadora">
-                    {% elif maquina.nombre_categoria == 'Volqueta' %}
-                    <img src="{{ url_for('static', path='/images/hero/planchon.jpeg') }}" alt="Volqueta">
-                    {% elif maquina.nombre_categoria == 'Cargadora' %}
-                    <img src="{{ url_for('static', path='/images/hero/retro2.jpeg') }}" alt="Cargadora">
-                    {% elif maquina.nombre_categoria == 'Retroexcavadora' %}
-                    <img src="{{ url_for('static', path='/images/hero/retroex.jpg') }}" alt="Retroexcavadora">
+                    {% elif imagenes_categoria.get(maquina.nombre_categoria) %}
+                    <img src="{{ imagenes_categoria[maquina.nombre_categoria].url }}" alt="Imagen de referencia: {{ maquina.nombre_categoria }}" loading="lazy">
                     {% else %}
                     <div class="maquinas-card-img--placeholder">{{ maquina.nombre_categoria }}</div>
                     {% endif %}

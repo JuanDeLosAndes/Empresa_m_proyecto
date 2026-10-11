@@ -1,3 +1,12 @@
+# ======================================================================
+# QUÉ HACE
+#   Abre y entrega la ÚNICA conexión a SQLite (archivo app/msps.db) y se encarga de
+#   crear las tablas al arrancar (init_db), migrando una base antigua si hace falta.
+# HASTA DÓNDE LLEGA (y qué NO hace)
+#   No tiene consultas de negocio (esas están en app/models/). Solo conexión +
+#   creación/migración del esquema. La estructura de las tablas está en schema.sql,
+#   no aquí.
+# ======================================================================
 """
 Capa de acceso a la base de datos de MSPS.
 
@@ -109,3 +118,21 @@ def init_db() -> None:
     with open(SCHEMA_PATH, "r", encoding="utf-8") as archivo:
         conn.executescript(archivo.read())
     conn.commit()
+
+# ======================================================================
+# CÓMO LO HACE (en concreto)
+#   - Singleton: la clase Database crea la conexión una sola vez en `__new__`; todos
+#     reciben la misma.
+#   - sqlite3.connect(..., check_same_thread=False) permite usarla desde los hilos de
+#     FastAPI; row_factory = sqlite3.Row permite leer columnas por nombre
+#     (fila['nombre']); PRAGMA foreign_keys = ON activa las llaves foráneas.
+#   - init_db(): 1) _migrar_esquema_anterior() convierte una base vieja (usuarios con
+#     columna `rol`) al esquema nuevo conservando los datos; 2) ejecuta schema.sql
+#     completo con executescript; 3) commit.
+# USA
+#   sqlite3 (librería estándar de Python) y app/schema.sql.
+# DÓNDE SE LLAMA
+#   get_connection(): todos los modelos (usuario, empresa, categoria, maquinaria,
+#   alquiler, factura, factura_empresa) y app/seed.py.
+#   init_db(): app/__init__.py, dentro de create_app().
+# ======================================================================

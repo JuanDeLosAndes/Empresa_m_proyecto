@@ -348,7 +348,7 @@ button {
     width: auto;
     z-index: 3;
     filter: drop-shadow(0 8px 10px rgba(0, 0, 0, 0.15));
-    opacity: 5.0;
+    opacity: 0.8;
 }
 
 /* =========================================================
@@ -397,9 +397,10 @@ button {
 .category-card {
     position: relative;
     display: flex;
-    align-items: center;
+    align-items: flex-end;
+    padding-bottom: 14px;
     justify-content: center;
-    width: 260px;
+    width: 236px;
     height: 180px;
     border-radius: 18px;
     overflow: hidden;
@@ -419,7 +420,19 @@ button {
     height: 100%;
     object-fit: contain;
     object-position: center;
-    padding: 12px;
+    padding: 12px 12px 56px;
+}
+
+/* Los recortes traen mucho margen transparente: se agrandan para que la máquina se vea */
+.category-card__image:not(.category-card__image--foto) {
+    transform: scale(1.45);
+    transform-origin: center 30%;
+}
+
+/* Foto completa (no recorte): llena todo el cuadro */
+.category-card__image--foto {
+    object-fit: cover;
+    padding: 0;
 }
 
 .category-card__label {
@@ -435,6 +448,8 @@ button {
 }
 
 .category-card--ghost {
+    align-items: center;
+    padding-bottom: 0;
     background: var(--color-grey-100);
     font-weight: 700;
     color: var(--color-black);

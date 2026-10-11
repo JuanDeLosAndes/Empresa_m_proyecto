@@ -1,3 +1,12 @@
+# ======================================================================
+# QUÉ HACE
+#   Registro y sesión: POST /registro/persona, POST /registro/empresa, POST /login y
+#   POST /logout.
+# HASTA DÓNDE LLEGA (y qué NO hace)
+#   Recibe el formulario, llama al modelo y responde con una redirección (y la
+#   cookie). No genera HTML ni SQL. Los administradores NO se registran aquí (solo
+#   desde seed o consola).
+# ======================================================================
 """
 Controlador (la C de MVC) de autenticación de MSPS.
 
@@ -108,3 +117,24 @@ def logout(request: Request):
     respuesta = RedirectResponse(url="/", status_code=303)
     respuesta.delete_cookie(SESSION_COOKIE_NAME)
     return respuesta
+
+# ======================================================================
+# CÓMO LO HACE (en concreto)
+#   - registrar_persona / registrar_empresa: llaman
+#     UsuarioModel.crear_persona_natural o EmpresaModel.crear. Si salta
+#     sqlite3.IntegrityError (cédula, correo o NIT repetidos) redirigen a
+#     /?registro=error; si todo sale bien, a /?registro=ok (código 303).
+#   - login: primero UsuarioModel.autenticar(identificador, contrasena); si falla,
+#     EmpresaModel.autenticar. Si acierta: redirige a /?login=ok, pone la cookie
+#     'msps_session' = firmar_sesion(rol, id) con httponly y samesite=lax, y vacía el
+#     carrito. Si no, /?login=error.
+#   - logout: request.session.clear() (borra el carrito) y
+#     delete_cookie('msps_session').
+# USA
+#   models/usuario.py, models/empresa.py, security.firmar_sesion,
+#   factories.crear_carrito_repositorio.
+# DÓNDE SE LLAMA
+#   app/__init__.py: include_router(auth_controller.router).
+#   Los formularios HTML: login_panel.html (action='/login'), register_panel.html
+#   (/registro/persona y /registro/empresa) y navbar.html (/logout).
+# ======================================================================

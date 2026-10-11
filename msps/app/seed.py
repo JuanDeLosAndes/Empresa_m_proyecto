@@ -1,3 +1,13 @@
+# ======================================================================
+# QUÉ HACE
+#   Carga los datos iniciales cada vez que arranca la app: categorías y 4 máquinas de
+#   ejemplo, un administrador por defecto, y el catálogo real (filas en SQL +
+#   documentos y fotos en MongoDB).
+# HASTA DÓNDE LLEGA (y qué NO hace)
+#   Solo siembra. Es idempotente: si ya existe, no duplica. Si MongoDB no responde,
+#   deja el error en el log y el sitio sigue funcionando. No define los datos reales
+#   (catalogo_maquinas.py).
+# ======================================================================
 """
 Datos de ejemplo de MSPS.
 
@@ -18,7 +28,11 @@ from pymongo.errors import PyMongoError
 
 from app.catalogo_maquinas import TARIFAS_COP_POR_HORA, construir_catalogo
 from app.database import get_connection
-from app.factories import crear_imagenes_repositorio, crear_maquina_documentos_repositorio
+from app.factories import (
+    crear_candado_repositorio,
+    crear_imagenes_repositorio,
+    crear_maquina_documentos_repositorio,
+)
 from app.models.categoria import CategoriaModel
 from app.models.maquinaria import MaquinariaModel
 from app.models.usuario import UsuarioModel
@@ -93,17 +107,26 @@ def seed_catalogo_real() -> None:
 
 
 def _sembrar_mongo(catalogo) -> None:
-    documentos = crear_maquina_documentos_repositorio()  # Factory Method
-    imagenes = crear_imagenes_repositorio()  # Factory Method
-    documentos.asegurar_indices()
+    candado = crear_candado_repositorio()  # Factory Method
+    if not candado.adquirir("seed_catalogo"):
+        # Otro proceso (p. ej. el padre/hijo de uvicorn --reload) ya está cargando el
+        # catálogo: no se compite con él, porque dos subidas simultáneas dañan fotos.
+        logger.info("Otro proceso está cargando el catálogo en MongoDB; se omite aquí.")
+        return
+    try:
+        documentos = crear_maquina_documentos_repositorio()  # Factory Method
+        imagenes = crear_imagenes_repositorio()  # Factory Method
+        documentos.asegurar_indices()
 
-    for doc in catalogo:
-        for imagen in doc.imagenes:
-            ruta = RUTA_IMAGENES_SEMILLA / imagen.archivo
-            imagenes.guardar(imagen.archivo, ruta.read_bytes())
-        # El documento se guarda al final: si una foto falla, no queda una
-        # ficha apuntando a imágenes que no existen.
-        documentos.guardar(doc)
+        for doc in catalogo:
+            for imagen in doc.imagenes:
+                ruta = RUTA_IMAGENES_SEMILLA / imagen.archivo
+                imagenes.guardar(imagen.archivo, ruta.read_bytes())
+            # El documento se guarda al final: si una foto falla, no queda una
+            # ficha apuntando a imágenes que no existen.
+            documentos.guardar(doc)
+    finally:
+        candado.liberar("seed_catalogo")
 
 
 def seed_demo_data() -> None:
@@ -141,3 +164,22 @@ def seed_demo_data() -> None:
         UsuarioModel.crear_administrador(nombre="admin", contrasena="admin123")
 
     seed_catalogo_real()
+
+# ======================================================================
+# CÓMO LO HACE (en concreto)
+#   - seed_demo_data(): crea categorías y las 4 máquinas de ejemplo si faltan, crea
+#     el usuario admin si no hay ningún administrador, y al final llama
+#     seed_catalogo_real().
+#   - seed_catalogo_real(): construye el catálogo; por cada máquina crea su categoría
+#     si falta e inserta la fila SQL si la placa no existe (tarifa =
+#     TARIFAS_COP_POR_HORA.get(placa, 0)).
+#   - _sembrar_mongo(): toma el candado; sube cada foto desde
+#     app/seed_data/imagenes_maquinas con imagenes.guardar(...); guarda el documento
+#     con documentos.guardar(...); suelta el candado en el finally. El documento se
+#     guarda DESPUÉS de sus fotos.
+# USA
+#   catalogo_maquinas.py, models/categoria.py, models/maquinaria.py,
+#   models/usuario.py, factories.py (candado, imágenes, documentos).
+# DÓNDE SE LLAMA
+#   app/__init__.py: seed_demo_data() dentro de create_app().
+# ======================================================================

@@ -1,3 +1,11 @@
+# ======================================================================
+# QUÉ HACE
+#   Crea el motor de plantillas (Jinja2) que convierte los archivos .html de
+#   app/templates en páginas completas con datos.
+# HASTA DÓNDE LLEGA (y qué NO hace)
+#   Solo configura el motor. No arma los datos de la página (eso lo hace builders.py)
+#   ni decide qué plantilla se usa (eso lo hace cada controlador).
+# ======================================================================
 
 from __future__ import annotations
 
@@ -33,3 +41,17 @@ def get_templates() -> Jinja2Templates:
 
 # Instancia lista para usar directamente desde los controladores.
 templates = get_templates()
+
+# ======================================================================
+# CÓMO LO HACE (en concreto)
+#   - Singleton: TemplateEngine crea una sola vez
+#     Jinja2Templates(directory=app/templates).
+#   - Al final del archivo queda la variable lista `templates = get_templates()`.
+# USA
+#   fastapi.templating.Jinja2Templates.
+# DÓNDE SE LLAMA
+#   controllers/home_controller.py y controllers/carrito_controller.py, con
+#   templates.TemplateResponse(request, 'archivo.html', context).
+#   (auth_controller y media_controller no lo usan: solo redirigen o devuelven
+#   imágenes.)
+# ======================================================================

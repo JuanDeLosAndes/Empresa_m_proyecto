@@ -1,3 +1,13 @@
+# ======================================================================
+# QUÉ HACE
+#   Construye y configura TODA la aplicación FastAPI: activa las sesiones por cookie,
+#   prepara SQLite, carga los datos iniciales, publica la carpeta /static y registra
+#   las rutas de los 4 controladores.
+# HASTA DÓNDE LLEGA (y qué NO hace)
+#   Termina cuando devuelve `app`. No tiene lógica de negocio ni rutas propias. El
+#   ORDEN importa: primero init_db (crea tablas), luego seed (necesita las tablas), y
+#   al final las rutas.
+# ======================================================================
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -37,3 +47,21 @@ def create_app() -> FastAPI:
     app.include_router(media_controller.router)
 
     return app
+
+# ======================================================================
+# CÓMO LO HACE (en concreto)
+#   - FastAPI(...) crea la app.
+#   - add_middleware(SessionMiddleware, secret_key=...) hace que `request.session`
+#     exista y se guarde en una cookie firmada; ahí vive el carrito.
+#   - init_db() crea o migra las tablas; seed_demo_data() carga categorías, máquinas,
+#     admin y el catálogo real (SQL + MongoDB).
+#   - app.mount('/static', StaticFiles(...)) sirve la carpeta app/static (CSS e
+#     imágenes del sitio).
+#   - include_router(...) conecta las rutas de home, auth, carrito y media.
+# USA
+#   fastapi, starlette (SessionMiddleware, StaticFiles)
+#   app/database.py (init_db), app/seed.py (seed_demo_data)
+#   app/controllers/home_, auth_, carrito_ y media_controller (sus `router`)
+# DÓNDE SE LLAMA
+#   main.py (app = create_app()) y los tests (TestClient(create_app())).
+# ======================================================================
