@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="admin">
+    <h1>Panel de administración</h1>
+    <p class="admin-ayuda">Elige una máquina para subir, ordenar o eliminar sus fotos.</p>
+
+    <table class="admin-tabla">
+        <thead>
+            <tr><th>Placa</th><th>Máquina</th><th>Categoría</th><th>Fotos</th><th></th></tr>
+        </thead>
+        <tbody>
+        {% for m in maquinas %}
+            <tr>
+                <td>{{ m.placa }}</td>
+                <td>{{ m.marca }} {{ m.modelo or '' }}</td>
+                <td>{{ m.nombre_categoria }}</td>
+                <td>{{ fotos_por_placa.get(m.placa, 0) }}</td>
+                <td><a class="admin-boton" href="/admin/maquinas/{{ m.id_maquinaria }}/fotos">Gestionar fotos</a></td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</section>
+
+<style>
+    .admin { max-width: 1000px; margin: 40px auto; padding: 0 20px; }
+    .admin h1 { margin: 0 0 8px; color: #333; }
+    .admin-ayuda { margin: 0 0 24px; color: #666; }
+    .admin-tabla { width: 100%; border-collapse: collapse; background: #fff; }
+    .admin-tabla th, .admin-tabla td { padding: 12px 10px; border-bottom: 1px solid #eee; text-align: left; }
+    .admin-tabla th { color: #666; font-size: 13px; text-transform: uppercase; letter-spacing: .5px; }
+    .admin-boton { display: inline-block; padding: 8px 14px; border-radius: 6px; background: #ff6b35; color: #fff; text-decoration: none; font-weight: bold; }
+    .admin-boton:hover { background: #e55a24; }
+</style>
+{% endblock %}

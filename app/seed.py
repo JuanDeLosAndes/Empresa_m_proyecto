@@ -2,11 +2,12 @@
 # QUÉ HACE
 #   Carga los datos iniciales cada vez que arranca la app: categorías y 4 máquinas de
 #   ejemplo, un administrador por defecto, y el catálogo real (filas en SQL +
-#   documentos y fotos en MongoDB).
+#   fichas técnicas en MongoDB).
 # HASTA DÓNDE LLEGA (y qué NO hace)
-#   Solo siembra. Es idempotente: si ya existe, no duplica. Si MongoDB no responde,
-#   deja el error en el log y el sitio sigue funcionando. No define los datos reales
-#   (catalogo_maquinas.py).
+#   Solo siembra. Es idempotente: si ya existe, no duplica ni pisa. NO siembra fotos:
+#   las sube el administrador desde /admin/maquinas y viven solo en MongoDB. Si
+#   MongoDB no responde, deja el error en el log y el sitio sigue funcionando. No
+#   define los datos reales (catalogo_maquinas.py).
 # ======================================================================
 """
 Datos de ejemplo de MSPS.
@@ -21,27 +22,20 @@ duplicar filas.
 from __future__ import annotations
 
 import logging
+import os
 import sqlite3
-from pathlib import Path
+from dataclasses import replace
 
 from pymongo.errors import PyMongoError
 
 from app.catalogo_maquinas import TARIFAS_COP_POR_HORA, construir_catalogo
 from app.database import get_connection
-from app.factories import (
-    crear_candado_repositorio,
-    crear_imagenes_repositorio,
-    crear_maquina_documentos_repositorio,
-)
+from app.factories import crear_candado_repositorio, crear_maquina_documentos_repositorio
 from app.models.categoria import CategoriaModel
 from app.models.maquinaria import MaquinariaModel
 from app.models.usuario import UsuarioModel
 
 logger = logging.getLogger(__name__)
-
-# Fotos procesadas que se suben a MongoDB (GridFS) en el seed. NO se sirven
-# como archivos estáticos: el sitio las lee desde la base (ruta /media/maquinas/...).
-RUTA_IMAGENES_SEMILLA = Path(__file__).resolve().parent / "seed_data" / "imagenes_maquinas"
 
 _CATEGORIAS = ["Excavadora", "Retroexcavadora", "Volqueta"]
 
@@ -68,9 +62,10 @@ def _obtener_o_crear_categoria(nombre: str):
 def seed_catalogo_real() -> None:
     """Carga la flota real en dos motores, enlazados por la placa:
     - SQL (SQLite): la fila de la máquina (lo transaccional: carrito, alquileres).
-    - MongoDB: el documento con la ficha técnica y las FOTOS (GridFS).
+    - MongoDB: el documento con la ficha técnica. Las FOTOS no se siembran: las
+      sube el administrador desde /admin/maquinas.
 
-    Idempotente: no duplica filas SQL ni reescribe documentos o fotos sin cambios.
+    Idempotente: no duplica filas SQL ni pisa documentos de MongoDB que ya existen.
     Si MongoDB no responde, el sitio sigue funcionando (sin galería ni ficha)
     y se deja el aviso en el log.
     """
@@ -107,24 +102,23 @@ def seed_catalogo_real() -> None:
 
 
 def _sembrar_mongo(catalogo) -> None:
+    """Crea en MongoDB la ficha técnica de cada máquina que todavía no la tenga.
+
+    Las FOTOS no se siembran: las gestiona el administrador desde /admin/maquinas y
+    viven únicamente en MongoDB (GridFS). Por eso el seed nunca pisa un documento
+    que ya existe: así no borra las fotos ni las ediciones que haya hecho el admin.
+    """
     candado = crear_candado_repositorio()  # Factory Method
     if not candado.adquirir("seed_catalogo"):
         # Otro proceso (p. ej. el padre/hijo de uvicorn --reload) ya está cargando el
-        # catálogo: no se compite con él, porque dos subidas simultáneas dañan fotos.
+        # catálogo: no se compite con él.
         logger.info("Otro proceso está cargando el catálogo en MongoDB; se omite aquí.")
         return
     try:
         documentos = crear_maquina_documentos_repositorio()  # Factory Method
-        imagenes = crear_imagenes_repositorio()  # Factory Method
         documentos.asegurar_indices()
-
         for doc in catalogo:
-            for imagen in doc.imagenes:
-                ruta = RUTA_IMAGENES_SEMILLA / imagen.archivo
-                imagenes.guardar(imagen.archivo, ruta.read_bytes())
-            # El documento se guarda al final: si una foto falla, no queda una
-            # ficha apuntando a imágenes que no existen.
-            documentos.guardar(doc)
+            documentos.insertar_si_falta(replace(doc, imagenes=[]))
     finally:
         candado.liberar("seed_catalogo")
 
@@ -161,7 +155,11 @@ def seed_demo_data() -> None:
     # público de registro (ver app/models/usuario.py).
     hay_admin = conn.execute("SELECT 1 FROM administradores").fetchone()
     if not hay_admin:
-        UsuarioModel.crear_administrador(nombre="admin", contrasena="admin123")
+        UsuarioModel.crear_administrador(
+            nombre="admin",
+            # En producción define MSPS_ADMIN_PASSWORD; el valor por defecto es solo para desarrollo.
+            contrasena=os.environ.get("MSPS_ADMIN_PASSWORD", "admin123"),
+        )
 
     seed_catalogo_real()
 
@@ -173,13 +171,12 @@ def seed_demo_data() -> None:
 #   - seed_catalogo_real(): construye el catálogo; por cada máquina crea su categoría
 #     si falta e inserta la fila SQL si la placa no existe (tarifa =
 #     TARIFAS_COP_POR_HORA.get(placa, 0)).
-#   - _sembrar_mongo(): toma el candado; sube cada foto desde
-#     app/seed_data/imagenes_maquinas con imagenes.guardar(...); guarda el documento
-#     con documentos.guardar(...); suelta el candado en el finally. El documento se
-#     guarda DESPUÉS de sus fotos.
+#   - _sembrar_mongo(): toma el candado; por cada máquina crea su documento (sin
+#     fotos) con documentos.insertar_si_falta(...), que nunca pisa uno existente;
+#     suelta el candado en el finally. Las fotos las gestiona el administrador.
 # USA
 #   catalogo_maquinas.py, models/categoria.py, models/maquinaria.py,
-#   models/usuario.py, factories.py (candado, imágenes, documentos).
+#   models/usuario.py, factories.py (candado, documentos).
 # DÓNDE SE LLAMA
 #   app/__init__.py: seed_demo_data() dentro de create_app().
 # ======================================================================

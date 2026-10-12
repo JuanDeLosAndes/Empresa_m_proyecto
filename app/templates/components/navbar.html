@@ -12,6 +12,8 @@
             {% if sesion %}
                 {% if sesion.tipo == 'persona_natural' %}
                     <a class="topbar__link" href="/unirse-empresa">Unirse a una empresa</a>
+                {% elif sesion.tipo == 'administrador' %}
+                    <a class="topbar__link" href="/admin/maquinas">Administrar fotos</a>
                 {% elif sesion.tipo == 'empresa' %}
                     <a class="topbar__link" href="/mensajes">Mensajes</a>
                 {% endif %}

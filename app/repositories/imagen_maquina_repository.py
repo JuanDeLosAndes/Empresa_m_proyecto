@@ -3,7 +3,7 @@
 #   Guarda y entrega los bytes de las fotos dentro de MongoDB usando GridFS
 #   (colecciones fs.files y fs.chunks).
 # HASTA DÓNDE LLEGA (y qué NO hace)
-#   Solo sube y lee fotos por su clave `archivo` (por ejemplo
+#   Solo sube, lee y borra fotos por su clave `archivo` (por ejemplo
 #   'komatsu-pc130/01.jpg'). No decide qué foto se muestra dónde. Se repara solo: si
 #   una foto quedó con bloques faltantes, la vuelve a subir.
 # ======================================================================
@@ -63,6 +63,10 @@ class ImagenesEscritor(ABC):
     def guardar(self, archivo: str, contenido: bytes, tipo_contenido: str = "image/jpeg") -> bool:
         """Sube o repara una foto. Devuelve True solo si hubo cambios."""
 
+    @abstractmethod
+    def eliminar(self, archivo: str) -> None:
+        """Borra la foto (registro y bloques). Si no existe, no hace nada."""
+
 
 class ImagenesGridFS(ImagenesLector, ImagenesEscritor):
     def __init__(self, base_datos: Database) -> None:
@@ -88,6 +92,10 @@ class ImagenesGridFS(ImagenesLector, ImagenesEscritor):
         """¿Están en fs.chunks todos los bloques que declara el registro?"""
         esperados = math.ceil(registro.length / registro.chunk_size) if registro.length else 0
         return self._chunks.count_documents({"files_id": registro._id}) == esperados
+
+    def eliminar(self, archivo: str) -> None:
+        self._fs.delete(archivo)
+        self._chunks.delete_many({"files_id": archivo})  # restos, si los hubiera
 
     def guardar(self, archivo: str, contenido: bytes, tipo_contenido: str = "image/jpeg") -> bool:
         huella = hashlib.sha256(contenido).hexdigest()
@@ -122,11 +130,12 @@ class ImagenesGridFS(ImagenesLector, ImagenesEscritor):
 #     bloques, no hace nada. Si cambió o está dañada, la borra, limpia restos en
 #     fs.chunks y la sube con put(_id=archivo, filename=archivo, metadata={sha256,
 #     tipo_contenido}).
+#   - eliminar(archivo): borra el registro de fs.files y sus bloques de fs.chunks.
 #   - _bloques_completos compara los bloques que hay en fs.chunks con los que declara
 #     el registro (longitud / tamaño de bloque).
 # USA
 #   gridfs y pymongo.
 # DÓNDE SE LLAMA
 #   factories.crear_imagenes_repositorio, usada por media_controller.py (obtener) y
-#   seed.py (guardar).
+#   admin_controller.py (guardar y eliminar).
 # ======================================================================

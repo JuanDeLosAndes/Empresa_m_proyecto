@@ -15,7 +15,8 @@ Principios SOLID aplicados:
 - ISP (Interface Segregation): lectura y escritura son contratos
   separados. Los controladores públicos solo necesitan leer, así que
   dependen únicamente de `MaquinaDocumentosLector` y no pueden
-  modificar nada por accidente; el seed usa además `MaquinaDocumentosEscritor`.
+  modificar nada por accidente; el seed y el panel de administrador usan además
+  `MaquinaDocumentosEscritor`.
 - DIP (Dependency Inversion): controladores y seed dependen de las
   interfaces abstractas, nunca de pymongo. La implementación concreta se
   obtiene con `crear_maquina_documentos_repositorio()` en app/factories.py.
@@ -71,6 +72,15 @@ class MaquinaDocumentosEscritor(ABC):
     def guardar(self, documento: MaquinaDocumento) -> bool:
         """Crea o actualiza (por slug, que no cambia aunque se corrija la
         placa). Devuelve True solo si hubo cambios."""
+
+    @abstractmethod
+    def insertar_si_falta(self, documento: MaquinaDocumento) -> bool:
+        """Crea el documento solo si no existe (nunca pisa uno ya editado).
+        Devuelve True si lo creó."""
+
+    @abstractmethod
+    def actualizar_imagenes(self, placa: str, imagenes: list[ImagenMaquina]) -> None:
+        """Reemplaza únicamente la lista de fotos del documento."""
 
 
 def _lectura_tolerante(por_defecto: Callable[[], Any]):
@@ -135,6 +145,18 @@ class MaquinaDocumentosMongo(MaquinaDocumentosLector, MaquinaDocumentosEscritor)
                     break
         return portadas
 
+    def insertar_si_falta(self, documento: MaquinaDocumento) -> bool:
+        if self._col.find_one({"$or": [{"slug": documento.slug}, {"placa": documento.placa}]}, {"_id": 1}):
+            return False
+        try:
+            self._col.insert_one(documento.to_document())
+        except DuplicateKeyError:
+            return False  # otro worker lo creó justo antes
+        return True
+
+    def actualizar_imagenes(self, placa: str, imagenes: list[ImagenMaquina]) -> None:
+        self._col.update_one({"placa": placa}, {"$set": {"imagenes": [i.to_document() for i in imagenes]}})
+
     def guardar(self, documento: MaquinaDocumento) -> bool:
         nuevo = documento.to_document()
         existente = self._col.find_one({"slug": documento.slug}, {"_id": 0})
@@ -153,7 +175,7 @@ class MaquinaDocumentosMongo(MaquinaDocumentosLector, MaquinaDocumentosEscritor)
 # CÓMO LO HACE (en concreto)
 #   - Interfaces separadas: MaquinaDocumentosLector (obtener_por_placa, listar,
 #     portadas_por_placa, portadas_por_categoria) y MaquinaDocumentosEscritor
-#     (guardar).
+#     (guardar, insertar_si_falta, actualizar_imagenes).
 #   - obtener_por_placa: find_one({'placa': ...}, {'_id': 0}). portadas_por_placa:
 #     proyección de placa + imagenes y busca la imagen con portada=True.
 #     portadas_por_categoria: ordena por slug y toma la primera portada de cada
@@ -161,11 +183,15 @@ class MaquinaDocumentosMongo(MaquinaDocumentosLector, MaquinaDocumentosEscritor)
 #   - guardar: compara con lo que ya hay (find_one por slug) y solo si cambió hace
 #     replace_one(..., upsert=True). asegurar_indices crea índice único en slug e
 #     índice en placa.
+#   - insertar_si_falta: crea el documento solo si no hay uno con ese slug o esa
+#     placa (nunca pisa uno existente). actualizar_imagenes: hace update_one con
+#     $set solo sobre el campo `imagenes`.
 #   - El decorador _lectura_tolerante captura PyMongoError, lo registra en el log y
 #     devuelve un valor vacío.
 # USA
 #   pymongo, app/documentos/maquina_documento.py (to_document / from_document).
 # DÓNDE SE LLAMA
 #   factories.crear_maquina_documentos_repositorio, usada por home_controller.py
-#   (lecturas) y seed.py (asegurar_indices y guardar).
+#   (lecturas), seed.py (asegurar_indices e insertar_si_falta), admin_controller.py
+#   (insertar_si_falta y actualizar_imagenes) y tools/migrar_fotos_a_mongo.py (guardar).
 # ======================================================================

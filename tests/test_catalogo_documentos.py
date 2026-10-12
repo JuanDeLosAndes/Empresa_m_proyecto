@@ -122,6 +122,7 @@ def test_placas_y_slugs_son_unicos():
     assert len({d.slug for d in docs}) == len(docs)
 
 
+@pytest.mark.skipif(not SEMILLA.exists(), reason="las fotos ya viven solo en MongoDB (carpeta semilla borrada)")
 def test_cada_imagen_del_catalogo_existe_en_la_carpeta_semilla():
     for d in construir_catalogo():
         for i in d.imagenes:
@@ -176,7 +177,7 @@ def test_si_mongodb_cae_la_lectura_devuelve_vacio_en_vez_de_romper():
 
 # ---------------- Imágenes en GridFS ----------------
 def test_la_foto_se_guarda_dentro_de_mongodb_y_se_lee_igual(imagenes):
-    original = (SEMILLA / "john-deere-200g-mc770043/01.jpg").read_bytes()
+    original = b"\xff\xd8\xff" + bytes(range(256)) * 40  # bytes de prueba con firma JPEG
     assert imagenes.guardar("john-deere-200g-mc770043/01.jpg", original) is True
     leida = imagenes.obtener("john-deere-200g-mc770043/01.jpg")
     assert leida.contenido == original
@@ -193,3 +194,29 @@ def test_subir_la_misma_foto_no_duplica_y_una_distinta_la_reemplaza(imagenes):
 
 def test_foto_inexistente_devuelve_none(imagenes):
     assert imagenes.obtener("no/existe.jpg") is None
+
+
+def test_eliminar_borra_la_foto_y_sus_bloques(imagenes, base_datos):
+    imagenes.guardar("a/01.jpg", b"contenido")
+    imagenes.eliminar("a/01.jpg")
+    assert imagenes.obtener("a/01.jpg") is None
+    assert base_datos["fs.chunks"].count_documents({}) == 0
+    imagenes.eliminar("a/01.jpg")  # borrar algo que no existe no da error
+
+
+# ---------------- Escritura que usa el panel del administrador ----------------
+def test_insertar_si_falta_nunca_pisa_un_documento_existente(repo):
+    doc = construir_catalogo()[0]
+    assert repo.insertar_si_falta(doc) is True
+    assert repo.insertar_si_falta(doc) is False
+    assert len(repo.listar()) == 1
+
+
+def test_actualizar_imagenes_solo_cambia_la_lista_de_fotos(repo):
+    doc = construir_catalogo()[0]
+    repo.guardar(doc)
+    repo.actualizar_imagenes(doc.placa, doc.imagenes[:1])
+    leido = repo.obtener_por_placa(doc.placa)
+    assert len(leido.imagenes) == 1
+    assert leido.ficha.filas_cuadro_info() == doc.ficha.filas_cuadro_info()
+    assert leido.marca == doc.marca

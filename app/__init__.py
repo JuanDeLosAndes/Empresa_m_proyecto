@@ -2,7 +2,7 @@
 # QUÉ HACE
 #   Construye y configura TODA la aplicación FastAPI: activa las sesiones por cookie,
 #   prepara SQLite, carga los datos iniciales, publica la carpeta /static y registra
-#   las rutas de los 4 controladores.
+#   las rutas de los 5 controladores.
 # HASTA DÓNDE LLEGA (y qué NO hace)
 #   Termina cuando devuelve `app`. No tiene lógica de negocio ni rutas propias. El
 #   ORDEN importa: primero init_db (crea tablas), luego seed (necesita las tablas), y
@@ -14,7 +14,13 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 
-from app.controllers import auth_controller, home_controller, carrito_controller, media_controller
+from app.controllers import (
+    admin_controller,
+    auth_controller,
+    carrito_controller,
+    home_controller,
+    media_controller,
+)
 from app.database import init_db
 from app.seed import seed_demo_data
 
@@ -45,6 +51,7 @@ def create_app() -> FastAPI:
     app.include_router(auth_controller.router)
     app.include_router(carrito_controller.router)
     app.include_router(media_controller.router)
+    app.include_router(admin_controller.router)
 
     return app
 
@@ -57,11 +64,11 @@ def create_app() -> FastAPI:
 #     admin y el catálogo real (SQL + MongoDB).
 #   - app.mount('/static', StaticFiles(...)) sirve la carpeta app/static (CSS e
 #     imágenes del sitio).
-#   - include_router(...) conecta las rutas de home, auth, carrito y media.
+#   - include_router(...) conecta las rutas de home, auth, carrito, media y admin.
 # USA
 #   fastapi, starlette (SessionMiddleware, StaticFiles)
 #   app/database.py (init_db), app/seed.py (seed_demo_data)
-#   app/controllers/home_, auth_, carrito_ y media_controller (sus `router`)
+#   app/controllers/home_, auth_, carrito_, media_ y admin_controller (sus `router`)
 # DÓNDE SE LLAMA
 #   main.py (app = create_app()) y los tests (TestClient(create_app())).
 # ======================================================================
