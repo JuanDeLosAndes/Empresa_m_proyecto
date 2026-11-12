@@ -1,34 +1,4 @@
-"""
-Documento de máquina (lo que se guarda en la base NoSQL) y su Builder.
 
-Forma del documento (una máquina = un documento, imágenes incluidas):
-
-    {
-      "placa": "MC770043",
-      "slug": "john-deere-200g-mc770043",
-      "identidad": {"marca": ..., "modelo": ..., "categoria": ...},
-      "descripcion": "...", "capacidad": "...",
-      "ficha_tecnica": {"tipo": "excavadora", "datos": {...}},
-      "imagenes": [{"archivo": "john-deere-200g-mc770043/01.jpg", "portada": true, ...}],
-      # "archivo" es también el _id de la foto en GridFS (ver imagen_maquina_repository)
-      "fuentes": [{"descripcion": "...", "url": "..."}],
-      "nota_verificacion": "..."
-    }
-
-Patrón creacional aplicado: BUILDER.
-Un documento tiene muchas partes (identidad, ficha, N imágenes, fuentes)
-y reglas de consistencia (sin fotos repetidas, una sola portada, nombre
-de archivo derivado del orden). `MaquinaDocumentoBuilder` lo arma paso a
-paso con interfaz fluida y valida todo en `build()`, de modo que es
-imposible guardar un documento a medio construir. Internamente delega la
-creación de la ficha a FichaTecnicaFactory (Factory Method).
-
-Principios SOLID:
-- SRP: este módulo solo define y construye el documento; no sabe dónde
-  se guarda (eso es del repositorio) ni cómo se dibuja (plantillas).
-- OCP/DIP: el Builder depende de la fábrica de fichas, no de ninguna
-  ficha concreta.
-"""
 from __future__ import annotations
 
 import re

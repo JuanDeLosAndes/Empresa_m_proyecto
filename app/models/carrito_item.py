@@ -1,12 +1,4 @@
-"""
-Entidad del carrito (la M de MVC, aunque no toca la base de datos:
-el carrito vive en la sesión, no en una tabla).
 
-Principio SOLID aplicado: SRP (Single Responsibility). CarritoItem
-solo sabe representar "una máquina con sus horas" y validar sus
-propios datos (horas mínimas, tipos). No sabe nada de sesiones,
-HTTP ni SQL: eso vive en el repositorio y en el controlador.
-"""
 from __future__ import annotations
 from dataclasses import dataclass
 

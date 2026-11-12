@@ -1,32 +1,13 @@
-"""
-Fichas técnicas de maquinaria: el "cuadro de información" de cada máquina.
 
-Patrón creacional aplicado: FACTORY METHOD.
-Cada tipo de equipo describe cosas distintas: una excavadora tiene
-profundidad de excavación y capacidad de cuchara; un minicargador tiene
-capacidad operativa y tipo de elevación. `FichaTecnicaFactory.crear()`
-recibe el tipo y devuelve la ficha correcta, así que ni el Builder, ni
-el repositorio, ni las plantillas necesitan saber qué campos tiene cada
-tipo.
-
-Principios SOLID:
-- SRP: cada ficha sabe únicamente qué campos tiene y cómo mostrarlos.
-- OCP: para soportar un tipo nuevo (p. ej. una volqueta) se crea una
-  clase y se registra con @registrar_ficha; no se modifica nada existente.
-- LSP: todas las fichas son intercambiables: la plantilla recorre
-  `filas_cuadro_info()` sin importar de qué subclase venga.
-"""
 from __future__ import annotations
 
 from abc import ABC
 from typing import Any, ClassVar
 
-# (clave del campo, etiqueta que ve el usuario, unidad si el valor es numérico)
 Campo = tuple[str, str, str]
 
 
 def _formatear_numero(valor: float) -> str:
-    """Formato colombiano: punto para miles y coma para decimales."""
     if float(valor).is_integer():
         return f"{int(valor):,}".replace(",", ".")
     texto = f"{valor:,.2f}".rstrip("0").rstrip(".")
@@ -35,12 +16,7 @@ def _formatear_numero(valor: float) -> str:
 
 
 class FichaTecnica(ABC):
-    """Producto abstracto de la fábrica.
 
-    Regla de formato: un valor numérico se muestra con su unidad
-    ("20.788 kg"); un texto se muestra tal cual, porque ya trae su
-    unidad o su rango ("12.380 – 12.740 kg").
-    """
 
     tipo: ClassVar[str]
     CAMPOS: ClassVar[tuple[Campo, ...]]
@@ -57,8 +33,7 @@ class FichaTecnica(ABC):
             raise ValueError(
                 f"Campos no válidos para una ficha '{self.tipo}': {sorted(desconocidos)}"
             )
-        # Los datos que no se conocen simplemente no se guardan: el cuadro
-        # de información nunca muestra filas vacías ni valores inventados.
+
         self._datos = {k: v for k, v in datos.items() if v not in (None, "")}
 
     @property

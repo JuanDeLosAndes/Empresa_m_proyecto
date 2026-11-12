@@ -1,38 +1,4 @@
-# ======================================================================
-# QUÉ HACE
-#   Lee y guarda en MongoDB el documento de cada máquina (ficha técnica + referencias
-#   a sus fotos), colección `maquinas`.
-# HASTA DÓNDE LLEGA (y qué NO hace)
-#   Solo traduce entre MaquinaDocumento y la colección. No guarda los bytes de las
-#   fotos (imagen_maquina_repository.py) ni arma documentos (maquina_documento.py).
-#   Si MongoDB falla, las LECTURAS devuelven vacío; la ESCRITURA sí lanza el error.
-# ======================================================================
-"""
-Repositorio de documentos de máquinas (ficha técnica + referencias a imágenes)
-sobre MongoDB: colección `maquinas`, un documento por máquina.
 
-Principios SOLID aplicados:
-- ISP (Interface Segregation): lectura y escritura son contratos
-  separados. Los controladores públicos solo necesitan leer, así que
-  dependen únicamente de `MaquinaDocumentosLector` y no pueden
-  modificar nada por accidente; el seed y el panel de administrador usan además
-  `MaquinaDocumentosEscritor`.
-- DIP (Dependency Inversion): controladores y seed dependen de las
-  interfaces abstractas, nunca de pymongo. La implementación concreta se
-  obtiene con `crear_maquina_documentos_repositorio()` en app/factories.py.
-- OCP (Open/Closed): otro motor (o una versión en memoria para pruebas)
-  se agrega como otra clase que cumpla los mismos contratos.
-- SRP: esta clase solo traduce entre MaquinaDocumento y la colección; no
-  construye documentos (Builder), no decide fichas (Factory) y no guarda
-  los bytes de las fotos (eso es de imagen_maquina_repository.py).
-- LSP: cualquier implementación puede sustituir a otra sin que los
-  clientes lo noten.
-
-Tolerancia a fallos: si MongoDB no responde, las LECTURAS registran el
-problema y devuelven "sin datos" (el sitio sigue funcionando, mostrando
-las máquinas sin galería ni ficha). La ESCRITURA sí propaga el error,
-para que el seed no finja que guardó algo.
-"""
 from __future__ import annotations
 
 import functools
@@ -171,27 +137,4 @@ class MaquinaDocumentosMongo(MaquinaDocumentosLector, MaquinaDocumentosEscritor)
             self._col.replace_one({"slug": documento.slug}, nuevo)
         return True
 
-# ======================================================================
-# CÓMO LO HACE (en concreto)
-#   - Interfaces separadas: MaquinaDocumentosLector (obtener_por_placa, listar,
-#     portadas_por_placa, portadas_por_categoria) y MaquinaDocumentosEscritor
-#     (guardar, insertar_si_falta, actualizar_imagenes).
-#   - obtener_por_placa: find_one({'placa': ...}, {'_id': 0}). portadas_por_placa:
-#     proyección de placa + imagenes y busca la imagen con portada=True.
-#     portadas_por_categoria: ordena por slug y toma la primera portada de cada
-#     categoría.
-#   - guardar: compara con lo que ya hay (find_one por slug) y solo si cambió hace
-#     replace_one(..., upsert=True). asegurar_indices crea índice único en slug e
-#     índice en placa.
-#   - insertar_si_falta: crea el documento solo si no hay uno con ese slug o esa
-#     placa (nunca pisa uno existente). actualizar_imagenes: hace update_one con
-#     $set solo sobre el campo `imagenes`.
-#   - El decorador _lectura_tolerante captura PyMongoError, lo registra en el log y
-#     devuelve un valor vacío.
-# USA
-#   pymongo, app/documentos/maquina_documento.py (to_document / from_document).
-# DÓNDE SE LLAMA
-#   factories.crear_maquina_documentos_repositorio, usada por home_controller.py
-#   (lecturas), seed.py (asegurar_indices e insertar_si_falta), admin_controller.py
-#   (insertar_si_falta y actualizar_imagenes) y tools/migrar_fotos_a_mongo.py (guardar).
-# ======================================================================
+

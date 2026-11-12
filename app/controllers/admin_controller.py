@@ -1,8 +1,4 @@
-"""Panel del administrador: gestionar las fotos de cada máquina.
 
-Las fotos viven SOLO en MongoDB (GridFS). Aquí el administrador las sube,
-elige la portada y las elimina. Todas las rutas exigen sesión de administrador.
-"""
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import RedirectResponse
 from pymongo.errors import PyMongoError

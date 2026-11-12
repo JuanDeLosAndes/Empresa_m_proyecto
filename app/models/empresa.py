@@ -1,11 +1,4 @@
-"""
-Modelo de Empresa (la M de MVC).
 
-Encapsula todo el acceso a la tabla `empresas`. Una Empresa tiene su
-propio inicio de sesión (correo + contraseña), separado del de
-Usuario, tal como lo muestra el diagrama (Empresa también tiene su
-propia columna de contraseña).
-"""
 from __future__ import annotations
 
 from dataclasses import dataclass

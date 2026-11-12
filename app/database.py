@@ -1,24 +1,4 @@
-# ======================================================================
-# QUÉ HACE
-#   Abre y entrega la ÚNICA conexión a SQLite (archivo app/msps.db) y se encarga de
-#   crear las tablas al arrancar (init_db), migrando una base antigua si hace falta.
-# HASTA DÓNDE LLEGA (y qué NO hace)
-#   No tiene consultas de negocio (esas están en app/models/). Solo conexión +
-#   creación/migración del esquema. La estructura de las tablas está en schema.sql,
-#   no aquí.
-# ======================================================================
-"""
-Capa de acceso a la base de datos de MSPS.
 
-Patrón creacional aplicado: SINGLETON (igual que TemplateEngine en
-templating.py). Centraliza la única conexión sqlite3 de la app para
-que todos los Modelos (la M de MVC) entren por el mismo punto en vez
-de que cada modelo o controlador abra conexiones por su cuenta.
-
-Ningún Controlador ni Vista debería importar `sqlite3` directamente:
-solo los archivos de app/models/ hablan con la base de datos, y todos
-pasan por `get_connection()`.
-"""
 from __future__ import annotations
 
 import sqlite3
@@ -31,7 +11,6 @@ SCHEMA_PATH = BASE_DIR / "schema.sql"
 
 
 class Database:
-    """Envoltorio Singleton alrededor de la conexión sqlite3."""
 
     _instance: Optional["Database"] = None
 
@@ -62,11 +41,7 @@ def _columnas(conn: sqlite3.Connection, tabla: str) -> set[str]:
 
 
 def _migrar_esquema_anterior(conn: sqlite3.Connection) -> None:
-    """Migra una msps.db creada con el esquema anterior (usuarios con la
-    columna `rol` y cédula/correo/teléfono dentro de `usuarios`) al
-    esquema nuevo: tabla `roles`, `usuarios.id_rol`, `personas_naturales`
-    y `administradores`. No hace nada en una base nueva o ya migrada.
-    """
+ 
     if "rol" not in _columnas(conn, "usuarios"):
         return
 
@@ -119,20 +94,3 @@ def init_db() -> None:
         conn.executescript(archivo.read())
     conn.commit()
 
-# ======================================================================
-# CÓMO LO HACE (en concreto)
-#   - Singleton: la clase Database crea la conexión una sola vez en `__new__`; todos
-#     reciben la misma.
-#   - sqlite3.connect(..., check_same_thread=False) permite usarla desde los hilos de
-#     FastAPI; row_factory = sqlite3.Row permite leer columnas por nombre
-#     (fila['nombre']); PRAGMA foreign_keys = ON activa las llaves foráneas.
-#   - init_db(): 1) _migrar_esquema_anterior() convierte una base vieja (usuarios con
-#     columna `rol`) al esquema nuevo conservando los datos; 2) ejecuta schema.sql
-#     completo con executescript; 3) commit.
-# USA
-#   sqlite3 (librería estándar de Python) y app/schema.sql.
-# DÓNDE SE LLAMA
-#   get_connection(): todos los modelos (usuario, empresa, categoria, maquinaria,
-#   alquiler, factura, factura_empresa) y app/seed.py.
-#   init_db(): app/__init__.py, dentro de create_app().
-# ======================================================================

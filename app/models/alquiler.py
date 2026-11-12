@@ -1,9 +1,4 @@
-"""
-Modelo de Alquiler (la M de MVC).
 
-Encapsula el acceso a la tabla `alquileres`, que relaciona un Usuario
-con una Maquinaria durante un periodo de tiempo.
-"""
 from __future__ import annotations
 
 from dataclasses import dataclass

@@ -1,24 +1,4 @@
-# ======================================================================
-# QUÉ HACE
-#   Registro y sesión: POST /registro/persona, POST /registro/empresa, POST /login y
-#   POST /logout.
-# HASTA DÓNDE LLEGA (y qué NO hace)
-#   Recibe el formulario, llama al modelo y responde con una redirección (y la
-#   cookie). No genera HTML ni SQL. Los administradores NO se registran aquí (solo
-#   desde seed o consola).
-# ======================================================================
-"""
-Controlador (la C de MVC) de autenticación de MSPS.
 
-Solo orquesta: recibe lo que llegó del formulario, se lo pasa al
-Modelo correspondiente (UsuarioModel / EmpresaModel) y decide la
-respuesta HTTP (redirección + cookie de sesión). No arma HTML y no
-contiene SQL: eso vive en app/models/.
-
-Administrador no tiene un formulario público de registro a propósito
-(ver app/models/usuario.py): solo se crea desde app/seed.py o desde
-consola, nunca desde una ruta expuesta a cualquier visitante.
-"""
 from __future__ import annotations
 
 import sqlite3
@@ -49,12 +29,7 @@ def registrar_persona(
             correo=correo,
         )
     except sqlite3.IntegrityError:
-        # Cédula o correo ya registrados
         return RedirectResponse(url="/?registro=error", status_code=303)
-
-    # Sin iniciar sesión automáticamente: el mensaje de "registro exitoso"
-    # se muestra dentro de la pestaña de registro (que solo existe en el
-    # navbar cuando NO hay sesión) y desde ahí la persona pasa al login.
     return RedirectResponse(url="/?registro=ok", status_code=303)
 
 
@@ -73,7 +48,6 @@ def registrar_empresa(
             contrasena=contrasena,
         )
     except sqlite3.IntegrityError:
-        # NIT o correo ya registrados
         return RedirectResponse(url="/?registro=error", status_code=303)
 
     return RedirectResponse(url="/?registro=ok", status_code=303)
@@ -81,9 +55,6 @@ def registrar_empresa(
 
 @router.post("/login")
 def login(request: Request, identificador: str = Form(...), contrasena: str = Form(...)):
-    # El campo "Usuario" del formulario acepta nombre, correo o cédula
-    # (personas/administradores) o correo/NIT (empresas): se prueba
-    # primero contra Usuario y luego contra Empresa.
     usuario = UsuarioModel.autenticar(identificador, contrasena)
     if usuario:
         respuesta = RedirectResponse(url="/?login=ok", status_code=303)
@@ -93,7 +64,7 @@ def login(request: Request, identificador: str = Form(...), contrasena: str = Fo
             httponly=True,
             samesite="lax",
         )
-        crear_carrito_repositorio(request).vaciar()  # cada inicio de sesión empieza con carrito vacío
+        crear_carrito_repositorio(request).vaciar()  
         return respuesta
 
     empresa = EmpresaModel.autenticar(identificador, contrasena)
@@ -105,7 +76,7 @@ def login(request: Request, identificador: str = Form(...), contrasena: str = Fo
             httponly=True,
             samesite="lax",
         )
-        crear_carrito_repositorio(request).vaciar()  # cada inicio de sesión empieza con carrito vacío
+        crear_carrito_repositorio(request).vaciar()  
         return respuesta
 
     return RedirectResponse(url="/?login=error", status_code=303)
@@ -113,28 +84,8 @@ def login(request: Request, identificador: str = Form(...), contrasena: str = Fo
 
 @router.post("/logout")
 def logout(request: Request):
-    request.session.clear()  # vacía el carrito guardado en la sesión (y todo lo demás)
+    request.session.clear()  
     respuesta = RedirectResponse(url="/", status_code=303)
     respuesta.delete_cookie(SESSION_COOKIE_NAME)
     return respuesta
 
-# ======================================================================
-# CÓMO LO HACE (en concreto)
-#   - registrar_persona / registrar_empresa: llaman
-#     UsuarioModel.crear_persona_natural o EmpresaModel.crear. Si salta
-#     sqlite3.IntegrityError (cédula, correo o NIT repetidos) redirigen a
-#     /?registro=error; si todo sale bien, a /?registro=ok (código 303).
-#   - login: primero UsuarioModel.autenticar(identificador, contrasena); si falla,
-#     EmpresaModel.autenticar. Si acierta: redirige a /?login=ok, pone la cookie
-#     'msps_session' = firmar_sesion(rol, id) con httponly y samesite=lax, y vacía el
-#     carrito. Si no, /?login=error.
-#   - logout: request.session.clear() (borra el carrito) y
-#     delete_cookie('msps_session').
-# USA
-#   models/usuario.py, models/empresa.py, security.firmar_sesion,
-#   factories.crear_carrito_repositorio.
-# DÓNDE SE LLAMA
-#   app/__init__.py: include_router(auth_controller.router).
-#   Los formularios HTML: login_panel.html (action='/login'), register_panel.html
-#   (/registro/persona y /registro/empresa) y navbar.html (/logout).
-# ======================================================================

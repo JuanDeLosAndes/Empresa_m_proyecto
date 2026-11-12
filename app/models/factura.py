@@ -1,8 +1,4 @@
-"""
-Modelo de Factura para persona natural (la M de MVC).
 
-Encapsula el acceso a la tabla `facturas`.
-"""
 from __future__ import annotations
 
 from dataclasses import dataclass

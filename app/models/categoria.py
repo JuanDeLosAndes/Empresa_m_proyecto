@@ -1,10 +1,4 @@
-"""
-Modelo de Categoría (la M de MVC).
 
-Encapsula todo el acceso a la tabla `categorias`. Ningún Controlador
-ni Vista debería ejecutar SQL contra esta tabla directamente: siempre
-pasan por CategoriaModel.
-"""
 from __future__ import annotations
 
 from dataclasses import dataclass

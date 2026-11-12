@@ -1,28 +1,4 @@
-# ======================================================================
-# QUÉ HACE
-#   Seguridad básica: convierte contraseñas en un hash irreversible y firma la cookie
-#   de sesión para que nadie pueda falsificarla.
-# HASTA DÓNDE LLEGA (y qué NO hace)
-#   Es criptografía pura: no conoce usuarios, controladores ni la base de datos.
-#   Decidir quién está logueado lo hace current_user.py; guardar el hash lo hacen los
-#   modelos.
-# ======================================================================
-"""
-Utilidades de seguridad de MSPS: hashing de contraseñas y firma de la
-cookie de sesión.
 
-Vive fuera de los Modelos y Controladores porque es una utilidad
-transversal (no es dato de negocio ni orquestación de rutas):
-- Los Modelos (app/models/usuario.py, app/models/empresa.py) la usan
-  para no guardar contraseñas en texto plano.
-- Los Controladores (app/controllers/auth_controller.py) la usan para
-  emitir y leer la cookie de sesión.
-
-La firma de sesión es stateless (no depende de guardar nada en
-memoria del servidor), a propósito: el proyecto se despliega con
-`gunicorn -w 4` (ver startup.sh), es decir con varios procesos, y una
-sesión guardada solo en memoria de un worker no la verían los demás.
-"""
 from __future__ import annotations
 
 import hashlib
@@ -30,9 +6,7 @@ import hmac
 import os
 import secrets
 
-# En producción, definir MSPS_SECRET_KEY como variable de entorno real
-# (por ejemplo en el .env que ya carga python-dotenv). Este valor por
-# defecto solo sirve para desarrollo local.
+
 SECRET_KEY = os.environ.get("MSPS_SECRET_KEY", "clave-de-desarrollo-cambiar-en-produccion")
 
 SESSION_COOKIE_NAME = "msps_session"
@@ -85,23 +59,3 @@ def leer_sesion(cookie_valor: str | None) -> tuple[str, int] | None:
         return None
     return tipo, int(id_str)
 
-# ======================================================================
-# CÓMO LO HACE (en concreto)
-#   - hash_password: genera un salt aleatorio de 16 bytes (secrets.token_hex) y
-#     aplica PBKDF2-HMAC-SHA256 con 260.000 iteraciones; guarda 'salt$hash'. La
-#     contraseña original nunca se guarda.
-#   - verify_password: repite el cálculo con el mismo salt y compara con
-#     hmac.compare_digest (comparación segura).
-#   - firmar_sesion(tipo, id) devuelve 'tipo:id:firma' (firma = HMAC-SHA256 con
-#     SECRET_KEY, que sale de la variable de entorno MSPS_SECRET_KEY o de un valor de
-#     desarrollo).
-#   - leer_sesion(cookie) recalcula la firma; si no coincide o el formato es raro,
-#     devuelve None.
-# USA
-#   hashlib, hmac, secrets, os (librería estándar).
-# DÓNDE SE LLAMA
-#   models/usuario.py y models/empresa.py: hash_password y verify_password.
-#   controllers/auth_controller.py: firmar_sesion y SESSION_COOKIE_NAME (al hacer
-#   login).
-#   current_user.py: leer_sesion (en cada petición).
-# ======================================================================

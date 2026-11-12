@@ -1,32 +1,4 @@
-# ======================================================================
-# QUÉ HACE
-#   Es el 'taller' que decide QUÉ objeto concreto se usa: (1) los campos de los
-#   formularios de login/registro, (2) el repositorio del carrito y (3) los
-#   repositorios de MongoDB (documentos, imágenes y candado).
-# HASTA DÓNDE LLEGA (y qué NO hace)
-#   Solo CREA objetos. No tiene reglas de negocio ni consultas. (El texto de arriba
-#   del archivo habla solo de formularios porque las fábricas de repositorios se
-#   agregaron después.)
-# ======================================================================
-"""
-Fábrica de formularios de autenticación de MSPS.
 
-Patrón creacional aplicado: FACTORY METHOD.
-Según el tipo de registro solicitado ("persona_natural" o "empresa") se
-construye el conjunto de campos correspondiente. Ni las plantillas ni el
-controlador necesitan conocer las reglas de cada tipo de cuenta: solo le
-piden a la fábrica el "producto" (lista de campos) que corresponde.
-Agregar un tercer tipo de cuenta en el futuro (p. ej. "operador") solo
-implica sumar un caso aquí, sin tocar vistas ni controladores.
-
-Nota: el `name` de cada campo debe coincidir con el parámetro que
-recibe la ruta POST correspondiente en app/controllers/auth_controller.py,
-que a su vez lo pasa a app/models/usuario.py o app/models/empresa.py.
-El formulario de empresa antes tenía un campo "usuario" que no existía
-en ninguna columna real de la tabla `empresas`; se reemplazó por
-"correo" (que sí es una columna del diagrama) porque además es lo que
-se usa para iniciar sesión como empresa.
-"""
 from __future__ import annotations
 
 from typing import Literal, TypedDict
@@ -117,23 +89,3 @@ class AuthFormFactory:
             ]
         raise ValueError(f"Tipo de registro no soportado: {tipo}")
 
-# ======================================================================
-# CÓMO LO HACE (en concreto)
-#   - crear_carrito_repositorio(request) -> CarritoRepositorioSesion(request).
-#   - crear_maquina_documentos_repositorio() ->
-#     MaquinaDocumentosMongo(get_mongo_database()).
-#   - crear_imagenes_repositorio() -> ImagenesGridFS(get_mongo_database()).
-#   - crear_candado_repositorio() -> CandadoMongo(get_mongo_database()).
-#   - AuthFormFactory.build_login_fields() y build_register_fields('persona_natural'
-#     | 'empresa') devuelven listas de campos {name, label, type, placeholder}.
-# USA
-#   app/documentos/store.py (get_mongo_database) y los 4 archivos de
-#   app/repositories/.
-# DÓNDE SE LLAMA
-#   builders.py: AuthFormFactory.
-#   controllers/auth_controller.py y carrito_controller.py:
-#   crear_carrito_repositorio.
-#   controllers/home_controller.py: crear_maquina_documentos_repositorio.
-#   controllers/media_controller.py: crear_imagenes_repositorio.
-#   seed.py: candado, imágenes y documentos.
-# ======================================================================

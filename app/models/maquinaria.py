@@ -1,12 +1,4 @@
-"""
-Modelo de Maquinaria (la M de MVC).
 
-Encapsula todo el acceso a la tabla `maquinarias`. Los listados
-incluyen el nombre de la categoría (JOIN con `categorias`) porque las
-vistas de catálogo y detalle lo necesitan para mostrarlo; esto evita
-que la plantilla tenga que hacer una segunda consulta o que el
-Controlador arme el join a mano.
-"""
 from __future__ import annotations
 
 from dataclasses import dataclass

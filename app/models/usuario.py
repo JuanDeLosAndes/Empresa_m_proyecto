@@ -1,18 +1,4 @@
-"""
-Modelo de Usuario (la M de MVC).
 
-`usuarios` es la cuenta base (nombre + contraseña + rol). Según el rol,
-los datos propios viven en otra tabla:
-  - rol 'persona_natural' -> tabla `personas_naturales` (cédula, correo, teléfono)
-  - rol 'administrador'   -> tabla `administradores`
-Los roles disponibles están en la tabla `roles` (empresa, administrador,
-persona_natural). Las empresas tienen su propia tabla y su propio login
-(ver app/models/empresa.py).
-
-Los administradores no se auto-registran desde la web (por seguridad) y
-se crean con `UsuarioModel.crear_administrador`, pensado para usarse
-desde un script/consola de administración.
-"""
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -24,8 +10,7 @@ from app.security import hash_password, verify_password
 ROL_PERSONA_NATURAL = "persona_natural"
 ROL_ADMINISTRADOR = "administrador"
 
-# Consulta base: une la cuenta con su rol y, si es persona natural, con
-# sus datos personales (para administradores cédula/correo/teléfono = NULL).
+
 _SELECT_USUARIO = """
     SELECT u.id_usuario, u.nombre, u.contrasena_hash, u.id_empresa,
            r.nombre AS rol,
@@ -73,9 +58,7 @@ class UsuarioModel:
         telefono: Optional[str] = None,
         id_empresa: Optional[int] = None,
     ) -> Usuario:
-        """Crea la cuenta (usuarios) y sus datos (personas_naturales) en
-        una sola transacción: si la cédula o el correo ya existen se
-        lanza sqlite3.IntegrityError y no queda nada a medias."""
+
         conn = get_connection()
         with conn:
             cursor = conn.execute(

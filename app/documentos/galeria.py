@@ -1,10 +1,3 @@
-"""Reglas puras de la galería de una máquina (sin base de datos).
-
-- La portada siempre es la primera foto y solo hay una.
-- `orden` se renumera 1..N tras cada cambio.
-- Cada foto nueva recibe un nombre único (`slug/<id>.jpg`): así nunca se
-  pisa una foto vieja y el navegador no muestra una versión en caché.
-"""
 from __future__ import annotations
 
 import uuid
