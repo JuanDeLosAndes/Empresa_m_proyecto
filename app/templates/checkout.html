@@ -8,7 +8,56 @@
     </div>
 
     <div class="checkout-content">
-        <p>Página de pago en desarrollo...</p>
+        <h2>Resumen del pedido</h2>
+        <ul class="checkout-lineas">
+            {% for linea in resumen.lineas %}
+            <li>
+                <span>{{ linea.maquina.marca }} {{ linea.maquina.modelo or "" }} ({{ linea.maquina.placa }}) × {{ linea.horas }} h</span>
+                <span>${{ "{:,.0f}".format(linea.total) }} COP</span>
+            </li>
+            {% endfor %}
+        </ul>
+
+        <div class="checkout-totales">
+            <p>Subtotal: ${{ "{:,.0f}".format(resumen.subtotal) }} COP</p>
+            <p>IVA (19%): ${{ "{:,.0f}".format(resumen.iva) }} COP</p>
+            <p><strong>Total: ${{ "{:,.0f}".format(resumen.total) }} COP</strong></p>
+        </div>
+
+        {% if sin_tarifa %}
+            <p class="checkout-aviso">Hay máquinas sin tarifa publicada. Quítalas del carrito o solicita una cotización.</p>
+        {% endif %}
+
+        <button id="btn-pagar" class="btn-pagar" {% if sin_tarifa %}disabled{% endif %}>Pagar ahora</button>
+        <p id="checkout-error" class="checkout-error" role="alert" hidden></p>
     </div>
 </div>
+
+<script>
+    document.getElementById('btn-pagar').addEventListener('click', async function () {
+        const boton = this;
+        const errorBox = document.getElementById('checkout-error');
+        errorBox.hidden = true;
+        boton.disabled = true;
+        boton.textContent = 'Preparando pago...';
+
+        try {
+            const respuesta = await fetch('/api/pagos/iniciar', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json' },
+            });
+            const datos = await respuesta.json().catch(() => ({}));
+            if (!respuesta.ok) {
+                throw new Error(datos.detail || 'No se pudo iniciar el pago.');
+            }
+            window.location.href = datos.url;
+        } catch (err) {
+            errorBox.textContent = err.message;
+            errorBox.hidden = false;
+            boton.disabled = false;
+            boton.textContent = 'Pagar ahora';
+        }
+    });
+</script>
 {% endblock %}

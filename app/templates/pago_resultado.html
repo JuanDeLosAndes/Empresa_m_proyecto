@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="checkout-container">
+    <div class="checkout-content">
+        {% if pago.estado == "aprobado" %}
+            <h1>¡Pago aprobado!</h1>
+            <p>Tu pago fue confirmado. Referencia: <strong>{{ pago.referencia }}</strong></p>
+            <p>Total pagado: ${{ "{:,.0f}".format(pago.monto) }} COP</p>
+        {% elif pago.estado == "pendiente" %}
+            <h1>Pago pendiente</h1>
+            <p>Aún no recibimos la confirmación de la pasarela. Referencia: <strong>{{ pago.referencia }}</strong></p>
+        {% elif pago.estado == "rechazado" %}
+            <h1>Pago rechazado</h1>
+            <p>La transacción no fue aprobada. Tu carrito sigue guardado para intentarlo de nuevo.</p>
+            <a href="/checkout">Intentar de nuevo</a>
+        {% else %}
+            <h1>No pudimos confirmar el pago</h1>
+            <p>Si se te cobró, comunícate con nosotros con la referencia <strong>{{ pago.referencia }}</strong>.</p>
+        {% endif %}
+        <p><a href="/">Volver al inicio</a></p>
+    </div>
+</div>
+{% endblock %}

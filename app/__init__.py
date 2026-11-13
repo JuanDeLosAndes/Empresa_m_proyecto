@@ -20,6 +20,7 @@ from app.controllers import (
     carrito_controller,
     home_controller,
     media_controller,
+    pago_controller,
 )
 from app.database import init_db
 from app.seed import seed_demo_data
@@ -52,6 +53,7 @@ def create_app() -> FastAPI:
     app.include_router(carrito_controller.router)
     app.include_router(media_controller.router)
     app.include_router(admin_controller.router)
+    app.include_router(pago_controller.router)
 
     return app
 

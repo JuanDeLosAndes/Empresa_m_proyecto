@@ -117,3 +117,20 @@ CREATE TABLE IF NOT EXISTS facturas_empresa (
 CREATE INDEX IF NOT EXISTS idx_facturas_empresa_id_alquiler ON facturas_empresa(id_alquiler);
 CREATE INDEX IF NOT EXISTS idx_facturas_empresa_id_empresa ON facturas_empresa(id_empresa);
 
+
+
+CREATE TABLE IF NOT EXISTS pagos (
+    id_pago        INTEGER PRIMARY KEY AUTOINCREMENT,
+    referencia     TEXT NOT NULL UNIQUE,
+    cliente_tipo   TEXT NOT NULL CHECK (cliente_tipo IN ('persona_natural', 'administrador', 'empresa')),
+    cliente_id     INTEGER NOT NULL,
+    monto          INTEGER NOT NULL CHECK (monto > 0),
+    proveedor      TEXT NOT NULL,
+    estado         TEXT NOT NULL DEFAULT 'pendiente'
+                       CHECK (estado IN ('pendiente', 'aprobado', 'rechazado', 'error')),
+    transaccion_id TEXT,
+    detalle        TEXT NOT NULL,
+    fecha          TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_pagos_cliente ON pagos(cliente_tipo, cliente_id);

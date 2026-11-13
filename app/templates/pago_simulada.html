@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="checkout-container">
+    <div class="checkout-content">
+        <h1>Pasarela de PRUEBA</h1>
+        <p>Esta página simula una pasarela de pago. No se cobra dinero real.</p>
+        <p>Referencia: <strong>{{ pago.referencia }}</strong></p>
+        <p>Monto: ${{ "{:,.0f}".format(pago.monto) }} COP</p>
+
+        <form method="post" action="/pago/simulado/{{ pago.referencia }}">
+            <button type="submit" name="decision" value="aprobar">Simular pago aprobado</button>
+            <button type="submit" name="decision" value="rechazar">Simular pago rechazado</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

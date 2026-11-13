@@ -89,22 +89,6 @@ async def ver_carrito(request: Request):
     return templates.TemplateResponse(request, "carrito.html", context)
 
 
-@router.get("/checkout")
-async def checkout(request: Request):
-    """Página de pago"""
-    sesion = obtener_sesion_actual(request)
-    if not sesion:
-        return RedirectResponse(url="/login?next=/checkout", status_code=302)
-
-    context = (
-        PageContextBuilder()
-        .with_title("Checkout")
-        .with_active_nav("Buscar Maquina")
-        .with_sesion(sesion)
-        .build()
-    )
-    return templates.TemplateResponse(request, "checkout.html", context)
-
 # ======================================================================
 # CÓMO LO HACE (en concreto)
 #   - Las rutas que modifican el carrito usan Depends(exigir_sesion): sin sesión
