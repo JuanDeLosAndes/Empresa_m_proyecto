@@ -49,6 +49,27 @@ class PageContextBuilder:
         self._context["categories"] = categories
         return self
 
+    def with_category_cards(
+        self,
+        categorias: list[Any],
+        imagenes: dict[str, dict[str, Any]],
+        color: str = "#ff7020",
+    ) -> "PageContextBuilder":
+        # Las tarjetas de la portada (enlace, color e imagen) son datos de VISTA: se
+        # arman aquí y no en el controlador. `categorias` vienen de CategoriaModel y
+        # `imagenes` del controlador ({nombre: {"url": ..., "foto": ...}}).
+        self._context["categories"] = [
+            {
+                "name": c.nombre_categoria,
+                "href": f"/maquinas?categoria={c.nombre_categoria}",
+                "image": imagenes.get(c.nombre_categoria, {}).get("url"),
+                "image_foto": imagenes.get(c.nombre_categoria, {}).get("foto", False),
+                "color": color,
+            }
+            for c in categorias
+        ]
+        return self
+
     def with_sesion(self, sesion: dict[str, Any] | None) -> "PageContextBuilder":
         self._context["sesion"] = sesion
         return self
@@ -63,4 +84,5 @@ class PageContextBuilder:
 
     def build(self) -> dict[str, Any]:
         return self._context
+
 
