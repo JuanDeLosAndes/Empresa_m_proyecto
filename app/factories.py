@@ -9,6 +9,7 @@ from fastapi import Request
 
 from app.documentos.store import get_mongo_database
 from app.models.carrito import CarritoModel
+from app.models.maquinaria import MaquinariaModel
 from app.models.catalogo_fotos import CatalogoFotosModel
 from app.models.galeria_maquina import GaleriaMaquinaModel
 from app.repositories.carrito_repository import (
@@ -45,7 +46,7 @@ def crear_carrito_repositorio(request: Request) -> CarritoRepositorioBase:
 
 def crear_carrito(request: Request) -> CarritoModel:
     """Factory Method: el Modelo del carrito, con su repositorio ya conectado."""
-    return CarritoModel(crear_carrito_repositorio(request))
+    return CarritoModel(crear_carrito_repositorio(request), MaquinariaModel)
 
 
 def crear_maquina_documentos_repositorio() -> MaquinaDocumentosMongo:
@@ -133,6 +134,10 @@ class AuthFormFactory:
                 {"name": "contrasena", "label": "Contraseña", "type": "password", "placeholder": "Contraseña"},
             ]
         raise ValueError(f"Tipo de registro no soportado: {tipo}")
+
+
+
+
 
 
 

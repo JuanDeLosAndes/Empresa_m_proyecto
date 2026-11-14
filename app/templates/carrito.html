@@ -7,6 +7,7 @@
         <h1>Mi Carrito</h1>
     </div>
 
+    <p id="estado-carrito" role="status"></p>
     {% if carrito %}
     <div class="carrito-content">
         <div class="carrito-items">
@@ -21,7 +22,7 @@
                     <!-- CANTIDAD DE HORAS -->
                     <div class="carrito-cantidad">
                         <label>Horas de alquiler:</label>
-                        <input type="number" min="1" value="{{ item.horas }}" class="horas-input" data-id="{{ item.maquina.id_maquinaria }}" data-precio="{{ item.maquina.costo_por_hora or 0 }}">
+                        <input type="number" min="1" value="{{ item.horas }}" class="horas-input" data-id="{{ item.maquina.id_maquinaria }}" aria-label="Horas para {{ item.maquina.placa }}">
                     </div>
                 </div>
 
@@ -51,7 +52,7 @@
                 <span id="total">${{ "{:,.0f}".format(resumen.total) }}</span>
             </div>
 
-            <button class="btn btn-pagar" onclick="irAPago()">Proceder al pago</button>
+            <button class="btn btn-pagar" onclick="location.href='/checkout'">Proceder al pago</button>
             <button class="btn btn-seguir" onclick="window.location.href='/maquinas'">Seguir comprando</button>
         </div>
     </div>
@@ -64,80 +65,5 @@
     {% endif %}
 </div>
 
-<script>
-    function formatoPesos(valor) {
-        return '$' + valor.toLocaleString('es-CO', {maximumFractionDigits: 0});
-    }
-
-    function eliminarDelCarrito(maquinaId) {
-        if (!confirm('¿Eliminar esta máquina del carrito?')) return;
-
-        fetch('/api/carrito/eliminar', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'same-origin',
-            body: JSON.stringify({ id_maquinaria: maquinaId })
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.status === 'ok') {
-                window.location.reload();
-            }
-        })
-        .catch(err => {
-            console.error('Error eliminar:', err);
-            alert('Error al eliminar del carrito');
-        });
-    }
-
-    function guardarHoras(maquinaId, horas) {
-        fetch('/api/carrito/actualizar', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'same-origin',
-            body: JSON.stringify({ id_maquinaria: maquinaId, horas: horas })
-        }).catch(err => console.error('Error actualizar horas:', err));
-    }
-
-    function irAPago() {
-        window.location.href = '/checkout';
-    }
-
-    function calcularTotales() {
-        let subtotal = 0;
-        document.querySelectorAll('.carrito-item').forEach(item => {
-            const input = item.querySelector('.horas-input');
-            const precio = parseFloat(input.dataset.precio) || 0;
-            const horas = parseInt(input.value) || 1;
-            const totalItem = precio * horas;
-            subtotal += totalItem;
-            item.querySelector('.total-precio').textContent = formatoPesos(totalItem) + ' COP';
-        });
-
-        // La tasa NO está escrita aquí: la entrega el Modelo (models/carrito.py) en data-tasa-iva.
-        const tasaIva = parseFloat(document.querySelector('.carrito-resumen')?.dataset.tasaIva) || 0;
-        const impuesto = subtotal * tasaIva;
-        const total = subtotal + impuesto;
-
-        document.getElementById('subtotal').textContent = formatoPesos(subtotal);
-        document.getElementById('impuesto').textContent = formatoPesos(impuesto);
-        document.getElementById('total').textContent = formatoPesos(total);
-    }
-
-    document.querySelectorAll('.btn-eliminar').forEach(btn => {
-        btn.addEventListener('click', () => eliminarDelCarrito(parseInt(btn.dataset.id)));
-    });
-
-    document.querySelectorAll('.horas-input').forEach(input => {
-        input.addEventListener('input', calcularTotales);
-        input.addEventListener('change', () => {
-            const horas = Math.max(1, parseInt(input.value) || 1);
-            input.value = horas;
-            calcularTotales();
-            guardarHoras(parseInt(input.dataset.id), horas);
-        });
-    });
-
-    calcularTotales();
-</script>
+<script defer src="/static/js/carrito.js"></script>
 {% endblock %}

@@ -1,4 +1,3 @@
-
 PRAGMA foreign_keys = ON;
 
 
@@ -66,6 +65,7 @@ CREATE TABLE IF NOT EXISTS maquinarias (
     modelo          TEXT,
     costo_por_hora  REAL NOT NULL CHECK (costo_por_hora >= 0),
     placa           TEXT NOT NULL UNIQUE,
+    disponible      INTEGER NOT NULL DEFAULT 1 CHECK(disponible IN (0, 1)),
     id_categoria    INTEGER NOT NULL REFERENCES categorias(id_categoria) ON DELETE RESTRICT
 );
 
@@ -117,3 +117,18 @@ CREATE TABLE IF NOT EXISTS facturas_empresa (
 CREATE INDEX IF NOT EXISTS idx_facturas_empresa_id_alquiler ON facturas_empresa(id_alquiler);
 CREATE INDEX IF NOT EXISTS idx_facturas_empresa_id_empresa ON facturas_empresa(id_empresa);
 
+
+CREATE TABLE IF NOT EXISTS solicitudes_empresa (
+    id_usuario INTEGER PRIMARY KEY REFERENCES personas_naturales(id_usuario) ON DELETE CASCADE,
+    id_empresa INTEGER NOT NULL REFERENCES empresas(id_empresa) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS cotizaciones (
+    id_cotizacion INTEGER PRIMARY KEY,
+    id_maquinaria INTEGER NOT NULL REFERENCES maquinarias(id_maquinaria),
+    nombre TEXT NOT NULL,
+    email TEXT NOT NULL,
+    telefono TEXT NOT NULL,
+    mensaje TEXT NOT NULL,
+    creada TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);

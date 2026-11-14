@@ -1,3 +1,16 @@
+{% if sesion and sesion.tipo in ('empresa', 'persona_natural') %}
+<section class="equipo-acceso" aria-label="Gestión de empresa">
+    <h2>{{ sesion.nombre }}</h2>
+    <div class="equipo-acciones">
+        {% if sesion.tipo == 'empresa' %}
+        <a class="equipo-btn" href="/mi-empresa#solicitudes">Solicitudes de ingreso</a>
+        <a class="equipo-btn secundaria" href="/mi-empresa#integrantes">Gestionar integrantes</a>
+        {% else %}
+        <a class="equipo-btn" href="/mi-empresa">Mi empresa</a>
+        {% endif %}
+    </div>
+</section>
+{% endif %}
 <footer class="footer">
 
     <div class="footer__brand">
@@ -15,8 +28,8 @@
         <h4>Enlaces</h4>
         <a href="/">Inicio</a>
         <a href="/maquinas">Buscar máquina</a>
-        <a href="/login">Iniciar sesión</a>
-        <a href="/registro">Registrarse</a>
+        {% if not sesion %}<a href="/?acceso=login">Iniciar sesión</a>
+        <a href="/?acceso=registro">Registrarse</a>{% endif %}
     </div>
 
     <div class="footer__contact">

@@ -17,34 +17,6 @@ class CarritoRepositorioBase(ABC):
     def guardar(self, items: list[CarritoItem]) -> None:
         ...
 
-    def agregar(self, id_maquinaria: int, horas: int) -> None:
-        items = self.leer()
-        for item in items:
-            if item.id_maquinaria == int(id_maquinaria):
-                item.horas = max(1, int(horas))
-                break
-        else:
-            items.append(CarritoItem(id_maquinaria, horas))
-        self.guardar(items)
-
-    def actualizar_horas(self, id_maquinaria: int, horas: int) -> None:
-        items = self.leer()
-        for item in items:
-            if item.id_maquinaria == int(id_maquinaria):
-                item.horas = max(1, int(horas))
-        self.guardar(items)
-
-    def eliminar(self, id_maquinaria: int) -> None:
-        items = [i for i in self.leer() if i.id_maquinaria != int(id_maquinaria)]
-        self.guardar(items)
-
-    def vaciar(self) -> None:
-        self.guardar([])
-
-    def contar(self) -> int:
-        return len(self.leer())
-
-
 class CarritoRepositorioSesion(CarritoRepositorioBase):
     """Guarda el carrito en request.session['carrito']."""
 

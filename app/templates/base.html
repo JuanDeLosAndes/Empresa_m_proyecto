@@ -17,5 +17,8 @@
     {% include "components/footer.html" %}
 
     <script src="{{ url_for('static', path='/js/main.js') }}" defer></script>
+    {% if sesion and sesion.tipo == 'administrador' %}
+    <script src="{{ url_for('static', path='/js/admin_maquinas.js') }}" defer></script>
+    {% endif %}
 </body>
 </html>

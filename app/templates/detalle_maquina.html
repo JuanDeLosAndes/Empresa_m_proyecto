@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
+{% set es_admin = sesion and sesion.tipo == "administrador" %}
 <div class="detalle-header">
     <button class="btn-volver" onclick="window.location.href='/maquinas'">← Volver</button>
 </div>
@@ -23,10 +24,19 @@
         <p class="detalle-img-referencia">Imagen de referencia de la categoría {{ maquina.nombre_categoria }}.</p>
         {% endif %}
 
-        {% if ficha and ficha.imagenes|length > 1 %}
+        {% if es_admin or (ficha and ficha.imagenes|length > 1) %}
         <!-- MINIATURAS (documento NoSQL: una entrada por foto) -->
         <div class="detalle-miniaturas" role="list">
-            {% for img in ficha.imagenes %}
+            {% if es_admin %}
+            <form id="subir-fotos-detalle" action="/admin/maquinas/{{ maquina.id_maquinaria }}/fotos" method="post" enctype="multipart/form-data">
+                <label class="admin-agregar admin-agregar-foto">
+                    <span aria-hidden="true">+</span><small>Agregar imagen</small>
+                    <input name="archivos" type="file" accept="image/jpeg,image/png,image/webp" multiple required aria-label="Agregar imágenes de esta máquina">
+                </label>
+                <span role="status" class="admin-ayuda"></span>
+            </form>
+            {% endif %}
+            {% for img in (ficha.imagenes if ficha else []) %}
             <button type="button" role="listitem"
                     class="detalle-miniatura{% if loop.first %} activa{% endif %}"
                     data-src="{{ url_for('imagen_maquina', archivo=img.archivo) }}"
@@ -38,12 +48,19 @@
         </div>
         {% endif %}
 
+        {% if es_admin and mensaje_fotos %}
+        <p class="aviso-cuenta" role="status">{{ mensaje_fotos.texto }}</p>
+        {% endif %}
+        <p id="estado-agregar" role="status"></p>
         <!-- BOTONES GALERIA -->
+        {% if not es_admin %}
         <div class="detalle-botones-galeria">
             <button class="btn btn-cotizar" onclick="cotizar()">
                 💬 Cotizar
             </button>
-            {% if maquina.costo_por_hora %}
+            {% if not maquina.disponible %}
+            <button class="btn btn-carrito" disabled>No disponible</button>
+            {% elif maquina.costo_por_hora %}
             <button class="btn btn-carrito" onclick="agregarAlCarrito()">
                 🛒 Agregar al carrito
             </button>
@@ -53,6 +70,7 @@
             </button>
             {% endif %}
         </div>
+        {% endif %}
     </div>
 
     <!-- INFO - LADO DERECHO -->
@@ -60,6 +78,10 @@
         <div class="detalle-info-card">
             <h1 class="detalle-titulo">{{ maquina.marca }} {{ maquina.modelo or '' }}</h1>
 
+            {% if es_admin %}
+            <p>{{ maquina.nombre_categoria }} · {{ maquina.placa }}</p>
+            {% include "components/admin_edicion.html" %}
+            {% else %}
             <!-- ESPECIFICACIONES -->
             <div class="detalle-specs">
                 <div class="detalle-info-item">
@@ -113,6 +135,7 @@
                 {% endif %}
             </div>
 
+            {% endif %}
             <!-- CUADRO DE INFORMACIÓN (ficha técnica del documento NoSQL) -->
             {% if ficha and ficha.cuadro_info %}
             <div class="detalle-caracteristicas">
@@ -133,33 +156,35 @@
 
             <!-- ESTADO -->
             <div class="detalle-estado">
-                <span class="badge badge-disponible">✓ Disponible</span>
+                <span class="badge {{ 'badge-disponible' if maquina.disponible else 'badge-no-disponible' }}">{{ '✓ Disponible' if maquina.disponible else 'No disponible' }}</span>
             </div>
         </div>
     </div>
 </div>
 
+<p id="cotizacion-confirmada" role="status" class="aviso-cotizacion"></p>
 <!-- MODAL DE COTIZACIÓN -->
 <div id="modal-cotizacion" class="modal" style="display:none;">
     <div class="modal-content">
         <span class="close" onclick="cerrarModal()">&times;</span>
         <h2>Solicitar Cotización</h2>
         <form onsubmit="enviarCotizacion(event)">
+            <p id="estado-cotizacion" role="status"></p>
             <div class="form-group">
                 <label for="nombre">Nombre:</label>
-                <input type="text" id="nombre" required>
+                <input type="text" id="nombre" name="nombre" required>
             </div>
             <div class="form-group">
                 <label for="email">Email:</label>
-                <input type="email" id="email" required>
+                <input type="email" id="email" name="email" required>
             </div>
             <div class="form-group">
                 <label for="telefono">Teléfono:</label>
-                <input type="tel" id="telefono" required>
+                <input type="tel" id="telefono" name="telefono" required>
             </div>
             <div class="form-group">
                 <label for="mensaje">Mensaje:</label>
-                <textarea id="mensaje" rows="4"></textarea>
+                <textarea id="mensaje" name="mensaje" rows="4"></textarea>
             </div>
             <button type="submit" class="btn btn-cotizar">Enviar Cotización</button>
         </form>
@@ -729,11 +754,11 @@
             .then(res => res.json())
             .then(data => {
                 if (!data.logueado) {
-                    alert('Debes iniciar sesión');
-                    window.location.href = '/';
+                    
+                    window.location.href = '/?acceso=login';
                     return;
                 }
-                return fetch('/api/carrito/agregar', {
+                return fetch('/api/carrito/items', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'same-origin',
@@ -742,17 +767,20 @@
                         horas: Math.max(1, parseInt(document.getElementById('cantidad-horas').value) || 1)
                     })
                 })
-                .then(res => res.json())
+                .then(async res => {
+                    const datos = await res.json();
+                    if (!res.ok) throw new Error(typeof datos.detail === 'string' ? datos.detail : 'No se pudo agregar la máquina.');
+                    return datos;
+                })
                 .then(data => {
                     if (data.status === 'ok') {
-                        alert('✓ Agregado al carrito');
-                        setTimeout(() => { window.location.href = '/carrito'; }, 500);
+                        window.location.href = '/carrito';
                     }
                 });
             })
             .catch(err => {
                 console.error('Error agregar al carrito:', err);
-                alert('Error al agregar al carrito');
+                document.querySelector('#estado-agregar').textContent = err.message;
             });
     }
 
@@ -764,11 +792,34 @@
         document.getElementById('modal-cotizacion').style.display = 'none';
     }
 
-    function enviarCotizacion(event) {
+    async function enviarCotizacion(event) {
         event.preventDefault();
-        alert('Cotización enviada correctamente. Nos pondremos en contacto pronto.');
-        cerrarModal();
-        event.target.reset();
+        const form = event.currentTarget;
+        const boton = form.querySelector('button[type="submit"]');
+        const estado = document.querySelector('#estado-cotizacion');
+        boton.disabled = true;
+        estado.textContent = 'Enviando…';
+        try {
+            const datos = Object.fromEntries(new FormData(form));
+            datos.id_maquinaria = maquinaId;
+            const respuesta = await fetch('/cotizaciones', {
+                method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(datos)
+            });
+            const resultado = await respuesta.json();
+            if (!respuesta.ok) {
+                throw new Error(typeof resultado.detail === 'string' ? resultado.detail : 'Revisa los datos de contacto y la longitud del mensaje.');
+            }
+            form.reset();
+            estado.textContent = '';
+            cerrarModal();
+            const aviso = document.querySelector('#cotizacion-confirmada');
+            aviso.textContent = 'Cotización #' + resultado.id_cotizacion + ' recibida.';
+            aviso.scrollIntoView({block: 'center'});
+        } catch (error) {
+            estado.textContent = error.message;
+        } finally {
+            boton.disabled = false;
+        }
     }
 
     function actualizarContadorCarrito() {

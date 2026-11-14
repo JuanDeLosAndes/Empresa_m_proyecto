@@ -2,7 +2,7 @@
 
 {% block content %}
 {% if mensaje %}
-<div class="msps-mensaje msps-mensaje--{{ mensaje.tipo }}">{{ mensaje.texto }}</div>
+<div role="status" class="{% if mensaje.tipo == 'exito' %}aviso-cuenta aviso-cuenta--inicio{% else %}msps-mensaje msps-mensaje--{{ mensaje.tipo }}{% endif %}">{{ mensaje.texto }}</div>
 {% endif %}
 <section class="hero">
    <img class="hero__bg" src="{{ url_for('static', path='/images/hero/fondo2.png') }}" alt="Zona de construcción con maquinaria pesada">
@@ -27,6 +27,11 @@
     </div>
 
     <div class="categories__grid">
+        {% if sesion and sesion.tipo == 'administrador' %}
+        <button type="button" class="category-card admin-agregar" data-abrir-alta aria-label="Agregar máquina">
+            <span aria-hidden="true">+</span><small>Agregar máquina</small>
+        </button>
+        {% endif %}
         {% for category in categories %}
         <a class="category-card" href="{{ category.href }}" style="--category-color: {{ category.color }};">
             {% if category.image %}
@@ -39,4 +44,5 @@
         <a class="category-card category-card--ghost" href="/maquinas">Ver todo</a>
     </div>
 </section>
+{% include "components/admin_alta.html" %}
 {% endblock %}

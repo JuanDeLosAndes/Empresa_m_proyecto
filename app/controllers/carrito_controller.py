@@ -1,13 +1,4 @@
-# ======================================================================
-# QUÉ HACE
-#   Controlador del carrito: API JSON (/api/verificar-login, /api/carrito/cantidad,
-#   /agregar, /actualizar, /eliminar) y las páginas /carrito y /checkout.
-# HASTA DÓNDE LLEGA (y qué NO hace)
-#   Solo lee la petición, valida que los datos sean números, llama al Modelo
-#   (CarritoModel) y devuelve JSON o la plantilla. NO calcula totales ni IVA y no
-#   consulta máquinas: eso es models/carrito.py. La comprobación de "¿hay sesión?"
-#   la hace dependencias.py.
-# ======================================================================
+
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import RedirectResponse
 
@@ -15,18 +6,23 @@ from app.builders import PageContextBuilder
 from app.controllers.dependencias import exigir_sesion
 from app.current_user import SesionActual, obtener_sesion_actual
 from app.factories import crear_carrito
-from app.models.carrito import MaquinaNoEncontrada
+from app.models.carrito import MaquinaNoEncontrada, RequiereCotizacion, MaquinaNoDisponible
+from pydantic import BaseModel, Field
 from app.templating import templates
 
 router = APIRouter()
 
 
-def _entero(data: dict, clave: str, por_defecto=None) -> int:
-    """Lee un número entero del cuerpo JSON; si no se puede, responde 400."""
-    try:
-        return int(data.get(clave, por_defecto))
-    except (TypeError, ValueError):
-        raise HTTPException(status_code=400, detail="Datos inválidos")
+class Horas(BaseModel):
+    horas: int = Field(ge=1)
+
+
+class ItemId(BaseModel):
+    id_maquinaria: int = Field(gt=0)
+
+
+class ItemNuevo(ItemId):
+    horas: int = Field(default=1, ge=1)
 
 
 @router.get("/api/verificar-login")
@@ -43,30 +39,47 @@ async def cantidad_carrito(request: Request):
     return {"cantidad": crear_carrito(request).contar()}
 
 
-@router.post("/api/carrito/agregar")
-async def agregar_carrito(request: Request, data: dict, _: SesionActual = Depends(exigir_sesion)):
-    """Agrega una máquina al carrito (o actualiza sus horas si ya estaba)"""
-    id_maquinaria = _entero(data, "id_maquinaria")
-    horas = _entero(data, "horas", 1)
+@router.post("/api/carrito/agregar", include_in_schema=False)
+@router.post("/api/carrito/items", responses={409: {"description": "Requiere cotización"}})
+def agregar_carrito(request: Request, data: ItemNuevo, _: SesionActual = Depends(exigir_sesion)):
     try:
-        crear_carrito(request).agregar(id_maquinaria, horas)
+        crear_carrito(request).agregar(data.id_maquinaria, data.horas)
     except MaquinaNoEncontrada:
-        raise HTTPException(status_code=404, detail="Máquina no encontrada")
+        raise HTTPException(404, "Máquina no encontrada")
+    except (RequiereCotizacion, MaquinaNoDisponible) as error:
+        raise HTTPException(409, str(error))
     return {"status": "ok", "mensaje": "Agregado al carrito"}
 
 
-@router.post("/api/carrito/actualizar")
-async def actualizar_carrito(request: Request, data: dict, _: SesionActual = Depends(exigir_sesion)):
-    """Actualiza las horas de una máquina que ya está en el carrito"""
-    crear_carrito(request).actualizar_horas(_entero(data, "id_maquinaria"), _entero(data, "horas", 1))
+@router.patch("/api/carrito/items/{id_maquinaria}")
+def actualizar_carrito(request: Request, id_maquinaria: int, data: Horas, _: SesionActual = Depends(exigir_sesion)):
+    carrito = crear_carrito(request)
+    try:
+        carrito.actualizar_horas(id_maquinaria, data.horas)
+    except MaquinaNoEncontrada:
+        raise HTTPException(404, "Máquina no encontrada en el carrito")
+    except (RequiereCotizacion, MaquinaNoDisponible) as error:
+        raise HTTPException(409, str(error))
+    resumen = carrito.resumen()
+    linea = next(l for l in resumen.lineas if l.maquina.id_maquinaria == id_maquinaria)
+    return {"status": "ok", "horas": linea.horas, "total_linea": linea.total,
+            "subtotal": resumen.subtotal, "iva": resumen.iva, "total": resumen.total}
+
+
+@router.delete("/api/carrito/items/{id_maquinaria}")
+def eliminar_carrito(request: Request, id_maquinaria: int, _: SesionActual = Depends(exigir_sesion)):
+    crear_carrito(request).eliminar(id_maquinaria)
     return {"status": "ok"}
 
 
-@router.post("/api/carrito/eliminar")
-async def eliminar_carrito(request: Request, data: dict, _: SesionActual = Depends(exigir_sesion)):
-    """Elimina una máquina del carrito"""
-    crear_carrito(request).eliminar(_entero(data, "id_maquinaria"))
-    return {"status": "ok"}
+@router.post("/api/carrito/actualizar", include_in_schema=False)
+def actualizar_anterior(request: Request, data: ItemNuevo, sesion: SesionActual = Depends(exigir_sesion)):
+    return actualizar_carrito(request, data.id_maquinaria, Horas(horas=data.horas), sesion)
+
+
+@router.post("/api/carrito/eliminar", include_in_schema=False)
+def eliminar_anterior(request: Request, data: ItemId, sesion: SesionActual = Depends(exigir_sesion)):
+    return eliminar_carrito(request, data.id_maquinaria, sesion)
 
 
 @router.get("/carrito")
@@ -74,7 +87,7 @@ async def ver_carrito(request: Request):
     """Muestra el carrito"""
     sesion = obtener_sesion_actual(request)
     if not sesion:
-        return RedirectResponse(url="/login?next=/carrito", status_code=302)
+        return RedirectResponse(url="/?acceso=login", status_code=302)
 
     resumen = crear_carrito(request).resumen()
     context = (
@@ -94,7 +107,7 @@ async def checkout(request: Request):
     """Página de pago"""
     sesion = obtener_sesion_actual(request)
     if not sesion:
-        return RedirectResponse(url="/login?next=/checkout", status_code=302)
+        return RedirectResponse(url="/?acceso=login", status_code=302)
 
     context = (
         PageContextBuilder()
@@ -104,20 +117,4 @@ async def checkout(request: Request):
         .build()
     )
     return templates.TemplateResponse(request, "checkout.html", context)
-
-# ======================================================================
-# CÓMO LO HACE (en concreto)
-#   - Las rutas que modifican el carrito usan Depends(exigir_sesion): sin sesión
-#     responden 401 antes de entrar a la función.
-#   - _entero convierte el JSON a int y responde 400 si no se puede (igual que antes).
-#   - agregar: CarritoModel.agregar lanza MaquinaNoEncontrada -> 404.
-#   - /carrito: CarritoModel.resumen() devuelve las líneas y los totales; la plantilla
-#     solo los pinta.
-# USA
-#   app/models/carrito.py, app/controllers/dependencias.py, app/factories.py
-#   (crear_carrito), app/builders.py, app/current_user.py, app/templating.py.
-# DÓNDE SE LLAMA
-#   app/__init__.py: create_app() hace app.include_router(carrito_controller.router).
-#   El JavaScript de detalle_maquina.html y carrito.html llama a /api/carrito/*.
-# ======================================================================
 

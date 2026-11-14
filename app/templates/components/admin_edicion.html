@@ -1,0 +1,10 @@
+<form id="form-editar-maquina" class="admin-form" data-maquina="{{ maquina.id_maquinaria }}">
+    <h2>Editar máquina</h2>
+    <label>Capacidad<input name="capacidad" value="{{ maquina.capacidad or '' }}" maxlength="200"></label>
+    <label>Descripción<textarea name="descripcion" maxlength="4000" rows="4">{{ maquina.descripcion or '' }}</textarea></label>
+    <label>Precio por hora (COP)<input name="costo_por_hora" type="number" min="0" step="0.01" required value="{{ maquina.costo_por_hora }}"></label>
+    <p class="admin-ayuda">Un precio de cero indica que se requiere cotización.</p>
+    <label class="admin-check"><input name="disponible" type="checkbox"{% if maquina.disponible %} checked{% endif %}> Disponible para alquiler</label>
+    <p class="admin-estado" role="status"></p>
+    <button class="equipo-btn" type="submit">Guardar cambios</button>
+</form>

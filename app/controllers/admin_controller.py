@@ -1,14 +1,4 @@
-# ======================================================================
-# QUÉ HACE
-#   Controlador del panel del administrador: lista de máquinas con su número de fotos
-#   (/admin/maquinas) y gestión de fotos de una máquina: ver, subir, elegir portada y
-#   eliminar (/admin/maquinas/{id}/fotos...).
-# HASTA DÓNDE LLEGA (y qué NO hace)
-#   Solo exige ser administrador, lee los formularios (incluidos los bytes de los
-#   archivos), llama al Modelo (GaleriaMaquinaModel) y redirige o muestra la plantilla.
-#   NO valida ni procesa fotos, no decide el orden de las fotos y no importa pymongo:
-#   eso es models/galeria_maquina.py.
-# ======================================================================
+from pydantic import BaseModel, Field, ConfigDict
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import RedirectResponse
 
@@ -33,15 +23,12 @@ def _maquina_o_404(id_maquinaria: int):
 
 def _volver(id_maquinaria: int, **params) -> RedirectResponse:
     query = "&".join(f"{k}={v}" for k, v in params.items())
-    return RedirectResponse(f"/admin/maquinas/{id_maquinaria}/fotos?{query}", status_code=303)
+    return RedirectResponse(f"/maquina/{id_maquinaria}?{query}", status_code=303)
 
 
 @router.get("/maquinas")
 def panel(request: Request, sesion: SesionActual = Depends(exigir_admin)):
-    context = PageContextBuilder().with_title("MSPS · Panel de administración").with_sesion(sesion).build()
-    context["maquinas"] = MaquinariaModel.listar()
-    context["fotos_por_placa"] = crear_galeria_maquina().fotos_por_placa()
-    return templates.TemplateResponse(request, "admin_maquinas.html", context)
+    return RedirectResponse("/maquinas", status_code=303)
 
 
 @router.get("/maquinas/{id_maquinaria}/fotos")
@@ -58,7 +45,7 @@ def pagina_fotos(request: Request, id_maquinaria: int, sesion: SesionActual = De
         max_fotos=GaleriaMaquinaModel.MAX_FOTOS,
         mensaje=mensaje_de_fotos(request.query_params),
     )
-    return templates.TemplateResponse(request, "admin_fotos.html", context)
+    return templates.TemplateResponse(request, "components/admin_fotos.html", context)
 
 
 @router.post("/maquinas/{id_maquinaria}/fotos")
@@ -96,18 +83,38 @@ def eliminar_foto(id_maquinaria: int, archivo: str = Form(...), _: SesionActual 
         return _volver(id_maquinaria, error="mongo")
     return _volver(id_maquinaria, hecho="eliminada")
 
-# ======================================================================
-# CÓMO LO HACE (en concreto)
-#   - Todas las rutas llevan Depends(exigir_admin) (controllers/dependencias.py).
-#   - subir_fotos: lee cada archivo con UploadFile.file.read(...) y le pasa al Modelo
-#     una lista (nombre, bytes); el Modelo devuelve cuántas se subieron y cuántas se
-#     rechazaron. El controlador redirige con esos números en la URL.
-#   - Si el Modelo lanza AlmacenNoDisponible (MongoDB caído), se redirige con
-#     ?error=mongo y mensajes.py muestra el aviso.
-# USA
-#   app/models/ (galeria_maquina, maquinaria), app/factories.py (crear_galeria_maquina),
-#   app/mensajes.py, app/builders.py, app/templating.py.
-# DÓNDE SE LLAMA
-#   app/__init__.py: create_app() hace app.include_router(admin_controller.router).
-#   El navbar del administrador enlaza a /admin/maquinas.
-# ======================================================================
+
+
+class EdicionMaquina(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+    costo_por_hora: float = Field(ge=0, allow_inf_nan=False)
+    capacidad: str = Field(default="", max_length=200)
+    descripcion: str = Field(default="", max_length=4000)
+    disponible: bool = True
+
+
+class AltaMaquina(EdicionMaquina):
+    marca: str = Field(min_length=1, max_length=120)
+    modelo: str = Field(default="", max_length=120)
+    placa: str = Field(min_length=1, max_length=50)
+    id_categoria: int = Field(gt=0)
+
+
+@router.post("/maquinas", status_code=201)
+def crear_maquina(datos: AltaMaquina, _: SesionActual = Depends(exigir_admin)):
+    try:
+        maquina = MaquinariaModel.crear(**datos.model_dump())
+    except ValueError as error:
+        raise HTTPException(409, str(error))
+    return {"id_maquinaria": maquina.id_maquinaria}
+
+
+@router.put("/maquinas/{id_maquinaria}")
+def actualizar_maquina(id_maquinaria: int, datos: EdicionMaquina, _: SesionActual = Depends(exigir_admin)):
+    try:
+        maquina = MaquinariaModel.actualizar(id_maquinaria, **datos.model_dump())
+    except LookupError as error:
+        raise HTTPException(404, str(error))
+    except ValueError as error:
+        raise HTTPException(422, str(error))
+    return {"id_maquinaria": maquina.id_maquinaria}

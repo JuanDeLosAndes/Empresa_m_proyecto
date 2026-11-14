@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="equipo-panel">
+    {% if sesion.tipo == 'empresa' %}
+    <h1>{{ sesion.nombre }}</h1>
+    <section id="solicitudes">
+        <h2>Solicitudes de ingreso</h2>
+        {% for persona in pendientes %}
+        <div class="equipo-fila">
+            <strong>{{ persona.nombre }}</strong>
+            <div class="equipo-acciones">
+                <button type="button" class="equipo-btn" data-accion="aceptar" data-usuario="{{ persona.id_usuario }}">Aceptar</button>
+                <button type="button" class="equipo-btn secundaria" data-accion="rechazar" data-usuario="{{ persona.id_usuario }}">Rechazar</button>
+            </div>
+        </div>
+        {% else %}<p>No tienes solicitudes pendientes.</p>{% endfor %}
+    </section>
+    <section id="integrantes">
+        <h2>Integrantes de la empresa</h2>
+        {% for persona in integrantes %}
+        <div class="equipo-fila">
+            <strong>{{ persona.nombre }}</strong>
+            <button type="button" class="equipo-btn secundaria" data-accion="retirar" data-usuario="{{ persona.id_usuario }}">Retirar de la empresa</button>
+        </div>
+        {% else %}<p>Todavía no hay integrantes vinculados.</p>{% endfor %}
+    </section>
+    {% else %}
+    <h1>Mi empresa</h1>
+    {% if actual.empresa %}<p>Perteneces a <strong>{{ actual.empresa }}</strong>.</p>
+    {% elif actual.pendiente %}<p>Tu solicitud para ingresar a <strong>{{ actual.pendiente }}</strong> está pendiente.</p>
+    {% elif empresas %}
+    <form id="solicitar-ingreso">
+        <label for="empresa">Selecciona la empresa a la que quieres ingresar</label>
+        <select id="empresa" required>
+            <option value="">Seleccionar empresa</option>
+            {% for e in empresas %}<option value="{{ e.id_empresa }}">{{ e.nombre }} · NIT {{ e.nit }}</option>{% endfor %}
+        </select>
+        <button class="equipo-btn">Solicitar ingreso</button>
+    </form>
+    {% else %}<p>Aún no hay empresas registradas.</p>{% endif %}
+    {% endif %}
+    <p id="estado-equipo" role="status"></p>
+</div>
+<script defer src="/static/js/empresa.js"></script>
+{% endblock %}

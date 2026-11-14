@@ -1,0 +1,27 @@
+{% if sesion and sesion.tipo == 'administrador' %}
+<dialog id="alta-maquina" class="admin-dialogo" aria-labelledby="titulo-alta">
+    <form id="form-alta-maquina" class="admin-form">
+        <div class="admin-cabecera">
+            <h2 id="titulo-alta">Agregar máquina</h2>
+            <button type="button" class="admin-cerrar" data-cerrar-alta aria-label="Cerrar">×</button>
+        </div>
+        <label>Marca<input name="marca" required maxlength="120"></label>
+        <label>Modelo<input name="modelo" maxlength="120"></label>
+        <label>Placa<input name="placa" required maxlength="50"></label>
+        <label>Categoría
+            <select name="id_categoria" required>
+                {% for cat in categorias %}
+                <option value="{{ cat.id_categoria }}"{% if categoria_activa == cat.nombre_categoria %} selected{% endif %}>{{ cat.nombre_categoria }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <label>Precio por hora (COP)<input name="costo_por_hora" type="number" required min="0" step="0.01" value="0"></label>
+        <p class="admin-ayuda">Un precio de cero indica que se requiere cotización.</p>
+        <label>Capacidad<input name="capacidad" maxlength="200"></label>
+        <label>Descripción<textarea name="descripcion" maxlength="4000" rows="3"></textarea></label>
+        <label class="admin-check"><input name="disponible" type="checkbox" checked> Disponible para alquiler</label>
+        <p role="status" class="admin-estado"></p>
+        <button type="submit" class="equipo-btn">Crear máquina</button>
+    </form>
+</dialog>
+{% endif %}

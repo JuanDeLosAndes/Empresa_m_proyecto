@@ -1,4 +1,3 @@
-
 from __future__ import annotations
 
 import hashlib
@@ -7,7 +6,7 @@ import os
 import secrets
 
 
-SECRET_KEY = os.environ.get("MSPS_SECRET_KEY", "clave-de-desarrollo-cambiar-en-produccion")
+SECRET_KEY = os.environ.get("MSPS_SECRET_KEY") or secrets.token_hex(32)
 
 SESSION_COOKIE_NAME = "msps_session"
 
@@ -58,4 +57,5 @@ def leer_sesion(cookie_valor: str | None) -> tuple[str, int] | None:
     if not id_str.isdigit():
         return None
     return tipo, int(id_str)
+
 

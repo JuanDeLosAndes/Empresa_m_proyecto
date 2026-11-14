@@ -1,3 +1,4 @@
+
 {% extends "base.html" %}
 
 {% block content %}
@@ -24,6 +25,11 @@
         </div>
 
         <div class="maquinas-grid">
+            {% if sesion and sesion.tipo == 'administrador' %}
+            <button type="button" class="admin-agregar admin-agregar-maquina" data-abrir-alta aria-label="Agregar máquina">
+                <span aria-hidden="true">+</span><small>Agregar máquina</small>
+            </button>
+            {% endif %}
             {% for maquina in maquinas %}
             <div class="maquinas-card" data-id="{{ maquina.id_maquinaria }}" data-categoria="{{ maquina.nombre_categoria }}" data-nombre="{{ maquina.marca }} {{ maquina.modelo or '' }}">
                 <div class="maquinas-card-img">
@@ -37,6 +43,7 @@
                     {% endif %}
                 </div>
                 <div class="maquinas-card-body">
+                    <p class="estado-maquina">{{ "Disponible" if maquina.disponible else "No disponible" }}</p>
                     <div class="maquinas-card-title">{{ maquina.marca }} {{ maquina.modelo or '' }}</div>
                     <div class="maquinas-card-spec">
                         <span class="spec-label">Categoría:</span> {{ maquina.nombre_categoria }}<br>
@@ -160,4 +167,5 @@
 
     actualizarContadorCarrito();
 </script>
+{% include "components/admin_alta.html" %}
 {% endblock %}

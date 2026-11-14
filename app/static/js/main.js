@@ -93,7 +93,7 @@
     });
 
     // Tras registrarse, el servidor redirige a /?registro=ok y el panel de
-    // registro llega abierto con el mensaje de éxito. Se limpia la URL para
+    // inicio de sesión llega abierto con el mensaje de éxito. Se limpia la URL para
     // que al recargar la página el mensaje no vuelva a aparecer.
     const params = new URLSearchParams(window.location.search);
     if (params.get("registro") === "ok") {

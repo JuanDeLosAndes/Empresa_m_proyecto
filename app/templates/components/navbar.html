@@ -11,18 +11,18 @@
         <div class="topbar__auth" data-auth-root>
             {% if sesion %}
                 {% if sesion.tipo == 'persona_natural' %}
-                    <a class="topbar__link" href="/unirse-empresa">Unirse a una empresa</a>
+                    <a class="topbar__link" href="/mi-empresa">Mi empresa</a>
                 {% elif sesion.tipo == 'administrador' %}
-                    <a class="topbar__link" href="/admin/maquinas">Administrar fotos</a>
+                    <a class="topbar__link" href="/maquinas">Administrar máquinas</a>
                 {% elif sesion.tipo == 'empresa' %}
-                    <a class="topbar__link" href="/mensajes">Mensajes</a>
+                    <a class="topbar__link" href="/mi-empresa#solicitudes">Solicitudes</a>
                 {% endif %}
                 <span class="topbar__user">Hola, {{ sesion.nombre }}</span>
                 <form action="/logout" method="post" style="display:inline">
                     <button type="submit" class="topbar__link">Cerrar sesión</button>
                 </form>
             {% else %}
-                <button type="button" class="topbar__link" data-auth-trigger="login">Iniciar sesion</button>
+                <button type="button" class="topbar__link" data-auth-trigger="login">Iniciar sesión</button>
                 <button type="button" class="topbar__link" data-auth-trigger="register">Registrarse</button>
 
                 {% include "components/auth/login_panel.html" %}

@@ -1,10 +1,11 @@
-
 from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Optional
 
-from app.database import get_connection
+from app.database import get_connection, transaccion
+import math
+import sqlite3
 
 
 @dataclass
@@ -18,12 +19,14 @@ class Maquinaria:
     placa: str
     id_categoria: int
     nombre_categoria: Optional[str] = None
+    disponible: bool = True
 
     @staticmethod
     def _from_row(row) -> "Maquinaria":
         return Maquinaria(
             id_maquinaria=row["id_maquinaria"],
             marca=row["marca"],
+            disponible=bool(row["disponible"]) if "disponible" in row.keys() else True,
             descripcion=row["descripcion"],
             capacidad=row["capacidad"],
             modelo=row["modelo"],
@@ -71,15 +74,40 @@ class MaquinariaModel:
         descripcion: Optional[str] = None,
         capacidad: Optional[str] = None,
         modelo: Optional[str] = None,
+        disponible: bool = True,
     ) -> Maquinaria:
-        conn = get_connection()
-        cursor = conn.execute(
-            """INSERT INTO maquinarias
-                   (marca, descripcion, capacidad, modelo, costo_por_hora, placa, id_categoria)
-               VALUES (?, ?, ?, ?, ?, ?, ?)""",
-            (marca, descripcion, capacidad, modelo, costo_por_hora, placa, id_categoria),
-        )
-        conn.commit()
-        maquina = MaquinariaModel.obtener_por_id(cursor.lastrowid)
-        assert maquina is not None
-        return maquina
+        validar_tarifa(costo_por_hora)
+        with transaccion() as conn:
+            if not conn.execute("SELECT 1 FROM categorias WHERE id_categoria = ?", (id_categoria,)).fetchone():
+                raise ValueError("Categoría no encontrada")
+            try:
+                cursor = conn.execute(
+                    """INSERT INTO maquinarias
+                       (marca, descripcion, capacidad, modelo, costo_por_hora, placa, id_categoria, disponible)
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+                    (marca, descripcion, capacidad, modelo, costo_por_hora, placa, id_categoria, disponible),
+                )
+            except sqlite3.IntegrityError as error:
+                raise ValueError("Ya existe una máquina con esa placa") from error
+            fila = conn.execute(_SELECT_CON_CATEGORIA + " WHERE m.id_maquinaria = ?", (cursor.lastrowid,)).fetchone()
+            return Maquinaria._from_row(fila)
+
+    @staticmethod
+    def actualizar(id_maquinaria: int, costo_por_hora: float, capacidad: str,
+                   descripcion: str, disponible: bool) -> Maquinaria:
+        validar_tarifa(costo_por_hora)
+        with transaccion() as conn:
+            resultado = conn.execute(
+                """UPDATE maquinarias SET costo_por_hora = ?, capacidad = ?, descripcion = ?, disponible = ?
+                   WHERE id_maquinaria = ?""",
+                (costo_por_hora, capacidad, descripcion, disponible, id_maquinaria),
+            )
+            if not resultado.rowcount:
+                raise LookupError("Máquina no encontrada")
+            fila = conn.execute(_SELECT_CON_CATEGORIA + " WHERE m.id_maquinaria = ?", (id_maquinaria,)).fetchone()
+            return Maquinaria._from_row(fila)
+
+
+def validar_tarifa(valor: float) -> None:
+    if not math.isfinite(valor) or valor < 0:
+        raise ValueError("El precio debe ser un número mayor o igual a cero")

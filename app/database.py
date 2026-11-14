@@ -1,6 +1,8 @@
 
+
 from __future__ import annotations
 
+from contextlib import contextmanager
 import sqlite3
 from pathlib import Path
 from typing import Optional
@@ -92,5 +94,24 @@ def init_db() -> None:
     _migrar_esquema_anterior(conn)
     with open(SCHEMA_PATH, "r", encoding="utf-8") as archivo:
         conn.executescript(archivo.read())
+    if "disponible" not in _columnas(conn, "maquinarias"):
+        conn.execute("ALTER TABLE maquinarias ADD COLUMN disponible INTEGER NOT NULL DEFAULT 1 CHECK(disponible IN (0, 1))")
+
     conn.commit()
+
+
+
+
+@contextmanager
+def transaccion():
+    """Conexión independiente para cada operación de cotización o afiliación."""
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    try:
+        conn.execute("PRAGMA foreign_keys = ON")
+        with conn:
+            yield conn
+    finally:
+        conn.close()
+
 

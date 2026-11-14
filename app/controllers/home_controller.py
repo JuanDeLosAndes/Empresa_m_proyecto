@@ -1,10 +1,11 @@
 
+
 from fastapi import APIRouter, HTTPException, Request
 
 from app.builders import PageContextBuilder
 from app.current_user import obtener_sesion_actual
 from app.factories import crear_catalogo_fotos
-from app.mensajes import mensaje_de_inicio
+from app.mensajes import mensaje_de_inicio, mensaje_de_fotos
 from app.models.catalogo_fotos import ImagenCategoria
 from app.models.categoria import CategoriaModel
 from app.models.maquinaria import MaquinariaModel
@@ -48,6 +49,7 @@ def home(request: Request):
         .with_registro_ok(request.query_params.get("registro") == "ok")
         .build()
     )
+    context["categorias"] = categorias
     return templates.TemplateResponse(request, "index.html", context)
 
 
@@ -91,6 +93,7 @@ def detalle_maquina(request: Request, id: int):
     context["imagen_categoria"] = _urls_de_imagenes(
         request, catalogo.imagenes_por_categoria([maquina.nombre_categoria])
     ).get(maquina.nombre_categoria)
+    context["mensaje_fotos"] = mensaje_de_fotos(request.query_params)
     return templates.TemplateResponse(request, "detalle_maquina.html", context)
 
 
