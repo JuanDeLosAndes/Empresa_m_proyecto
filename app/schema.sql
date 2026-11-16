@@ -132,3 +132,14 @@ CREATE TABLE IF NOT EXISTS cotizaciones (
     mensaje TEXT NOT NULL,
     creada TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS registros_pendientes (
+    token_hash TEXT PRIMARY KEY,
+    correo TEXT NOT NULL UNIQUE,
+    tipo TEXT NOT NULL CHECK(tipo IN ('persona', 'empresa')),
+    datos TEXT NOT NULL,
+    creado INTEGER NOT NULL,
+    vence INTEGER NOT NULL
+);
+
+

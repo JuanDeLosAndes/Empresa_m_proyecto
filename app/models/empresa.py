@@ -6,6 +6,7 @@ from typing import Optional
 
 from app.database import get_connection
 from app.security import hash_password, verify_password
+import re
 
 ROL_EMPRESA = "empresa"
 
@@ -61,9 +62,14 @@ class EmpresaModel:
     def autenticar(identificador: str, contrasena: str) -> Optional[Empresa]:
         """Autentica por correo o NIT."""
         conn = get_connection()
+        identificador = identificador.strip()
+        nit = identificador.replace(".", "").replace("-", "")
+        if re.fullmatch(r"[0-9]{9,10}", nit):
+            nit = nit[:9]
         fila = conn.execute(
-            "SELECT * FROM empresas WHERE correo = ? OR nit = ?",
-            (identificador, identificador),
+            """SELECT * FROM empresas WHERE lower(correo) = ? OR nit = ?
+               OR substr(replace(replace(nit, '.', ''), '-', ''), 1, 9) = ?""",
+            (identificador.lower(), identificador, nit),
         ).fetchone()
         if fila and verify_password(contrasena, fila["contrasena_hash"]):
             return Empresa._from_row(fila)

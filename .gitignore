@@ -15,3 +15,6 @@ __pycache__/
 bin/
 obj/
 deploy.zip
+
+.env
+app/respaldo_cuentas_*.db

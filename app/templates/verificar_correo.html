@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="equipo-panel">
+    <h1>Verificación del correo</h1>
+    <p role="status">{{ texto }}</p>
+    {% if token %}
+    <form method="post" action="/verificar-correo">
+        <input type="hidden" name="token" value="{{ token }}">
+        <button class="equipo-btn" type="submit">Confirmar mi correo</button>
+    </form>
+    {% endif %}
+    <p><a href="/?acceso=login">Iniciar sesión</a></p>
+    <p><a href="/?acceso=registro">Volver al registro o solicitar otro enlace</a></p>
+</div>
+{% endblock %}

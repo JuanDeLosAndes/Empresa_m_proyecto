@@ -1,15 +1,11 @@
-# ======================================================================
-# QUÉ HACE
-#   Controlador de cuentas: registro de persona natural (/registro/persona), registro
-#   de empresa (/registro/empresa), inicio de sesión (/login) y cierre (/logout).
-# HASTA DÓNDE LLEGA (y qué NO hace)
-#   Solo recibe los formularios, le pregunta al Modelo (AutenticacionModel) y responde
-#   con la redirección y la cookie de sesión. NO decide si las credenciales son
-#   correctas ni conoce SQLite: eso es models/autenticacion.py.
-# ======================================================================
 from __future__ import annotations
 
 from fastapi import APIRouter, Form, Request
+from app.models import registro_verificado
+from app.correo import CorreoNoDisponible
+from app.builders import PageContextBuilder
+from app.templating import templates
+from app.current_user import obtener_sesion_actual
 from fastapi.responses import RedirectResponse
 
 from app.factories import crear_carrito
@@ -19,26 +15,47 @@ from app.security import SESSION_COOKIE_NAME, firmar_sesion
 router = APIRouter()
 
 
+def pagina_estado(request, texto, token=None, status=200):
+    contexto = PageContextBuilder().with_title("Verificar correo · MSPS").with_sesion(obtener_sesion_actual(request)).build()
+    contexto.update(texto=texto, token=token)
+    return templates.TemplateResponse(request, "verificar_correo.html", contexto, status_code=status,
+                                      headers={"Cache-Control": "no-store", "Referrer-Policy": "no-referrer"})
+
+
+def registrar(request, tipo, nombre, correo, contrasena, documento):
+    try:
+        registro_verificado.solicitar(tipo, nombre, correo, contrasena, documento)
+    except ValueError as error:
+        return pagina_estado(request, str(error), status=400)
+    except CorreoNoDisponible as error:
+        return pagina_estado(request, str(error), status=503)
+    return pagina_estado(request, "Revisa tu correo y la carpeta de spam. Abre el enlace y confirma para activar tu cuenta. El enlace vence en 30 minutos.")
+
+
 @router.post("/registro/persona")
-def registrar_persona(
-    cedula: str = Form(...),
-    usuario: str = Form(...),
-    correo: str = Form(...),
-    contrasena: str = Form(...),
-):
-    creada = AutenticacionModel.registrar_persona(cedula, usuario, correo, contrasena)
-    return RedirectResponse(url="/?registro=ok" if creada else "/?registro=error", status_code=303)
+def registrar_persona(request: Request, cedula: str = Form(...), usuario: str = Form(...),
+                      correo: str = Form(...), contrasena: str = Form(...)):
+    return registrar(request, "persona", usuario, correo, contrasena, cedula)
 
 
 @router.post("/registro/empresa")
-def registrar_empresa(
-    nombre_empresa: str = Form(...),
-    nit: str = Form(...),
-    correo: str = Form(...),
-    contrasena: str = Form(...),
-):
-    creada = AutenticacionModel.registrar_empresa(nombre_empresa, nit, correo, contrasena)
-    return RedirectResponse(url="/?registro=ok" if creada else "/?registro=error", status_code=303)
+def registrar_empresa(request: Request, nombre_empresa: str = Form(...), nit: str = Form(...),
+                      correo: str = Form(...), contrasena: str = Form(...)):
+    return registrar(request, "empresa", nombre_empresa, correo, contrasena, nit)
+
+
+@router.get("/verificar-correo")
+def abrir_verificacion(request: Request, token: str = ""):
+    return pagina_estado(request, "Confirma tu correo para activar la cuenta.", token=token)
+
+
+@router.post("/verificar-correo")
+def confirmar_correo(request: Request, token: str = Form(...)):
+    try:
+        registro_verificado.confirmar(token)
+    except ValueError as error:
+        return pagina_estado(request, str(error), status=400)
+    return RedirectResponse("/?registro=ok", status_code=303)
 
 
 @router.post("/login")
@@ -65,17 +82,4 @@ def logout(request: Request):
     respuesta.delete_cookie(SESSION_COOKIE_NAME)
     return respuesta
 
-# ======================================================================
-# CÓMO LO HACE (en concreto)
-#   - registrar_*: AutenticacionModel devuelve True/False y el controlador redirige a
-#     /?registro=ok o /?registro=error (home_controller muestra el mensaje).
-#   - login: AutenticacionModel.autenticar -> Credencial(tipo, id); security.firmar_sesion
-#     genera el valor de la cookie 'msps_session' (httponly, samesite=lax).
-#   - logout: borra request.session (el carrito) y la cookie de sesión.
-# USA
-#   app/models/autenticacion.py, app/security.py, app/factories.py (crear_carrito).
-# DÓNDE SE LLAMA
-#   app/__init__.py: create_app() hace app.include_router(auth_controller.router).
-#   Los formularios del navbar (components/auth/*.html) envían a estas rutas.
-# ======================================================================
 

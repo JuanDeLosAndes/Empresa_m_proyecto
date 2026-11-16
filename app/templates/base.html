@@ -1,12 +1,14 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <link rel="stylesheet" href="{{ url_for('static', path='/css/carrito.css') }}">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>{{ title|default("MSPS - Maquiservicio Pérez SAS") }}</title>
-    <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', path='/css/ajustes_interfaz.css') }}?v=20261115c">
+
+    <link rel="stylesheet" href="/static/css/carrito.css">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/ajustes_interfaz.css?v=20261115c">
 </head>
 <body>
     {% include "components/navbar.html" %}
@@ -17,9 +19,10 @@
 
     {% include "components/footer.html" %}
 
-    <script src="{{ url_for('static', path='/js/main.js') }}" defer></script>
+    <script src="/static/js/main.js" defer></script>
+
     {% if sesion and sesion.tipo == 'administrador' %}
-    <script src="{{ url_for('static', path='/js/admin_maquinas.js') }}?v=20261115c" defer></script>
+        <script src="/static/js/admin_maquinas.js?v=20261115c" defer></script>
     {% endif %}
 </body>
 </html>
