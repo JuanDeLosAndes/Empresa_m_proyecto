@@ -28,9 +28,9 @@
 
     <div class="categories__grid">
         {% if sesion and sesion.tipo == 'administrador' %}
-        <button type="button" class="category-card admin-agregar" data-abrir-alta aria-label="Agregar máquina">
-            <span aria-hidden="true">+</span><small>Agregar máquina</small>
-        </button>
+        <a class="category-card admin-agregar" href="/maquinas" aria-label="Abrir catálogo">
+            <span aria-hidden="true">+</span><small>Catálogo</small>
+        </a>
         {% endif %}
         {% for category in categories %}
         <a class="category-card" href="{{ category.href }}" style="--category-color: {{ category.color }};">

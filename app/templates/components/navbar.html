@@ -1,3 +1,4 @@
+
 <header class="topbar">
     <a class="topbar__brand" href="/" aria-label="Maquiservicio Pérez S.A.S. - Inicio">
         <img class="topbar__logo" src="{{ url_for('static', path='/images/logo/logo-msps.png') }}" alt="Maquiservicio Pérez S.A.S.">
@@ -18,7 +19,7 @@
                     <a class="topbar__link" href="/mi-empresa#solicitudes">Solicitudes</a>
                 {% endif %}
                 <span class="topbar__user">Hola, {{ sesion.nombre }}</span>
-                <form action="/logout" method="post" style="display:inline">
+                <form action="/logout" method="post" onsubmit="return confirm('¿Estás seguro de cerrar sesión?')" style="display:inline">
                     <button type="submit" class="topbar__link">Cerrar sesión</button>
                 </form>
             {% else %}

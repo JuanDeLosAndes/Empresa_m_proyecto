@@ -118,3 +118,12 @@ def actualizar_maquina(id_maquinaria: int, datos: EdicionMaquina, _: SesionActua
     except ValueError as error:
         raise HTTPException(422, str(error))
     return {"id_maquinaria": maquina.id_maquinaria}
+
+
+@router.delete("/maquinas/{id_maquinaria}")
+def borrar_maquina(id_maquinaria: int, _: SesionActual = Depends(exigir_admin)):
+    try:
+        MaquinariaModel.eliminar(id_maquinaria)
+    except LookupError as error:
+        raise HTTPException(404, str(error))
+    return {"status": "ok"}

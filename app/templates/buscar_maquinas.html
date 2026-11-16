@@ -1,4 +1,3 @@
-
 {% extends "base.html" %}
 
 {% block content %}
@@ -37,12 +36,15 @@
                     {% if portada %}
                     <img src="{{ url_for('imagen_maquina', archivo=portada.archivo) }}" alt="{{ portada.alt }}" loading="lazy">
                     {% elif imagenes_categoria.get(maquina.nombre_categoria) %}
-                    <img src="{{ imagenes_categoria[maquina.nombre_categoria].url }}" alt="Imagen de referencia: {{ maquina.nombre_categoria }}" loading="lazy">
+                    <img src="{{ imagenes_categoria[maquina.nombre_categoria].url }}" alt="Imagen de referencia de {{ maquina.nombre_categoria }}" loading="lazy">
                     {% else %}
                     <div class="maquinas-card-img--placeholder">{{ maquina.nombre_categoria }}</div>
                     {% endif %}
                 </div>
                 <div class="maquinas-card-body">
+                    {% if not portada and imagenes_categoria.get(maquina.nombre_categoria) %}
+                    <p class="admin-ayuda">Imagen de referencia de la categoría</p>
+                    {% endif %}
                     <p class="estado-maquina">{{ "Disponible" if maquina.disponible else "No disponible" }}</p>
                     <div class="maquinas-card-title">{{ maquina.marca }} {{ maquina.modelo or '' }}</div>
                     <div class="maquinas-card-spec">

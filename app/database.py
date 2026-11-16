@@ -97,6 +97,8 @@ def init_db() -> None:
     if "disponible" not in _columnas(conn, "maquinarias"):
         conn.execute("ALTER TABLE maquinarias ADD COLUMN disponible INTEGER NOT NULL DEFAULT 1 CHECK(disponible IN (0, 1))")
 
+    if "eliminada" not in _columnas(conn, "maquinarias"):
+        conn.execute("ALTER TABLE maquinarias ADD COLUMN eliminada INTEGER NOT NULL DEFAULT 0")
     conn.commit()
 
 

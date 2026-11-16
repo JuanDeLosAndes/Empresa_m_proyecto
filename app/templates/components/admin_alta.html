@@ -20,6 +20,10 @@
         <label>Capacidad<input name="capacidad" maxlength="200"></label>
         <label>Descripción<textarea name="descripcion" maxlength="4000" rows="3"></textarea></label>
         <label class="admin-check"><input name="disponible" type="checkbox" checked> Disponible para alquiler</label>
+        <label>Imágenes de la máquina
+            <input name="archivos" type="file" accept="image/jpeg,image/png,image/webp" multiple>
+        </label>
+        <p class="admin-ayuda">Puedes seleccionar varias fotos. Si alguna falla, podrás volver a subirla desde la ficha.</p>
         <p role="status" class="admin-estado"></p>
         <button type="submit" class="equipo-btn">Crear máquina</button>
     </form>

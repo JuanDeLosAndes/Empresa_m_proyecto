@@ -11,6 +11,7 @@
         const boton = form.querySelector('[type="submit"]');
         const estado = form.querySelector('.admin-estado');
         const datos = Object.fromEntries(new FormData(form));
+        delete datos.archivos;
         datos.costo_por_hora = Number(datos.costo_por_hora);
         datos.disponible = form.elements.disponible.checked;
         if (crear) datos.id_categoria = Number(datos.id_categoria);
@@ -26,7 +27,22 @@
             if (!respuesta.ok) {
                 throw new Error(typeof resultado.detail === 'string' ? resultado.detail : 'Revisa los campos del formulario.');
             }
-            if (crear) location.href = '/maquina/' + resultado.id_maquinaria;
+            if (crear) {
+                const archivos = form.elements.archivos.files;
+                const destino = '/maquina/' + resultado.id_maquinaria;
+                if (archivos.length) {
+                    const carga = new FormData();
+                    for (const archivo of archivos) carga.append('archivos', archivo);
+                    try {
+                        const subida = await fetch('/admin/maquinas/' + resultado.id_maquinaria + '/fotos', {
+                            method: 'POST', body: carga
+                        });
+                        location.href = subida.ok ? subida.url : destino + '?error=mongo';
+                    } catch (error) {
+                        location.href = destino + '?error=mongo';
+                    }
+                } else location.href = destino;
+            }
             else location.reload();
         } catch (error) {
             estado.textContent = error.message || 'No se pudo guardar. Intenta nuevamente.';
@@ -43,3 +59,17 @@
         subida.requestSubmit();
     });
 })();
+
+document.querySelector('[data-eliminar-maquina]')?.addEventListener('click', async event => {
+    if (!confirm('¿Estás seguro de eliminar esta máquina del catálogo?')) return;
+    const boton = event.currentTarget;
+    boton.disabled = true;
+    try {
+        const respuesta = await fetch('/admin/maquinas/' + boton.dataset.eliminarMaquina, {method: 'DELETE'});
+        if (!respuesta.ok) throw new Error('No se pudo eliminar la máquina.');
+        location.href = '/maquinas';
+    } catch (error) {
+        document.querySelector('#form-editar-maquina .admin-estado').textContent = error.message;
+        boton.disabled = false;
+    }
+});

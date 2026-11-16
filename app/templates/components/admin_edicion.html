@@ -7,4 +7,5 @@
     <label class="admin-check"><input name="disponible" type="checkbox"{% if maquina.disponible %} checked{% endif %}> Disponible para alquiler</label>
     <p class="admin-estado" role="status"></p>
     <button class="equipo-btn" type="submit">Guardar cambios</button>
+    <button class="equipo-btn secundaria" type="button" data-eliminar-maquina="{{ maquina.id_maquinaria }}">Eliminar máquina</button>
 </form>

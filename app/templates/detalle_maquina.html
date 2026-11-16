@@ -15,15 +15,16 @@
             {% elif maquina.imagen_url %}
                 <img src="{{ url_for('static', path='/images/hero/' + maquina.imagen_url) }}" alt="{{ maquina.marca }}" class="detalle-img-main">
             {% elif imagen_categoria %}
-                <img src="{{ imagen_categoria.url }}" alt="Imagen de referencia: {{ maquina.nombre_categoria }}" class="detalle-img-main">
+                <img src="{{ imagen_categoria.url }}" alt="Imagen de referencia de {{ maquina.nombre_categoria }}" class="detalle-img-main">
             {% else %}
                 <div class="detalle-img-principal--placeholder">{{ maquina.nombre_categoria }}</div>
             {% endif %}
         </div>
-        {% if not (ficha and ficha.imagenes) and not maquina.imagen_url and imagen_categoria %}
-        <p class="detalle-img-referencia">Imagen de referencia de la categoría {{ maquina.nombre_categoria }}.</p>
-        {% endif %}
 
+
+        {% if not (ficha and ficha.imagenes) and not maquina.imagen_url and imagen_categoria %}
+        <p class="detalle-img-referencia">Imagen de referencia de la categoría {{ maquina.nombre_categoria }}. Puedes subir una foto propia de esta máquina.</p>
+        {% endif %}
         {% if es_admin or (ficha and ficha.imagenes|length > 1) %}
         <!-- MINIATURAS (documento NoSQL: una entrada por foto) -->
         <div class="detalle-miniaturas" role="list">
@@ -44,6 +45,13 @@
                     aria-label="{{ img.vista }}">
                 <img src="{{ url_for('imagen_maquina', archivo=img.archivo) }}" alt="{{ img.alt }}" loading="lazy">
             </button>
+            {% if es_admin %}
+            <form action="/admin/maquinas/{{ maquina.id_maquinaria }}/fotos/eliminar" method="post"
+                  onsubmit="return confirm('¿Estás seguro de eliminar esta imagen?')">
+                <input type="hidden" name="archivo" value="{{ img.archivo }}">
+                <button class="equipo-btn secundaria" type="submit">Eliminar imagen</button>
+            </form>
+            {% endif %}
             {% endfor %}
         </div>
         {% endif %}
