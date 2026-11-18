@@ -7,12 +7,21 @@
         <h1>Mi Carrito</h1>
     </div>
 
+    <p><a href="/pagos">Ver mis pagos</a></p>
     <p id="estado-carrito" role="status"></p>
     {% if carrito %}
     <div class="carrito-content">
         <div class="carrito-items">
             {% for item in carrito %}
             <div class="carrito-item">
+                <a class="carrito-foto" href="/maquina/{{ item.maquina.id_maquinaria }}">
+                    {% set foto = portadas.get(item.maquina.placa) %}
+                    <img src="{{ url_for('imagen_maquina', archivo=foto.archivo) if foto else '/static/images/sin-foto.svg' }}"
+                         alt="{{ item.maquina.marca }} {{ item.maquina.modelo or '' }}"
+                         width="160" height="120" loading="lazy" decoding="async"
+                         data-foto-carrito>
+                    {% if not foto %}<small>Sin foto propia</small>{% endif %}
+                </a>
                 <div class="carrito-item-info">
                     <h3>{{ item.maquina.marca }} {{ item.maquina.modelo or '' }}</h3>
                     <p><strong>Categoría:</strong> {{ item.maquina.nombre_categoria }}</p>
@@ -66,4 +75,5 @@
 </div>
 
 <script defer src="/static/js/carrito.js"></script>
+<script defer src="/static/js/fotos_carrito.js"></script>
 {% endblock %}

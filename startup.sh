@@ -1,10 +1,5 @@
 #!/bin/sh
-PORT=${PORT:-8000}
-echo "=========================================="
-echo "🚀 Iniciando FastAPI en el puerto $PORT"
-echo "📁 Archivo principal: main.py"
-echo "🔧 Instancia de FastAPI: app"
-echo "=========================================="
-# Los workers comparten una clave incluso en un arranque local sin configuración.
-export MSPS_SECRET_KEY="${MSPS_SECRET_KEY:-$(python -c 'import secrets; print(secrets.token_hex(32))')}"
-exec gunicorn -w 4 -k uvicorn.workers.UvicornWorker main:app --bind 0.0.0.0:$PORT
+set -eu
+export MSPS_DB_PATH="${MSPS_DB_PATH:-/home/data/msps.db}"
+python tools/preparar_sqlite.py
+exec python -m uvicorn main:app --host 0.0.0.0 --port 8000 --workers 1

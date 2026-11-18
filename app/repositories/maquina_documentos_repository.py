@@ -1,14 +1,18 @@
-
 from __future__ import annotations
 
 import functools
 import logging
+import copy
+import os
+import threading
+import time
 from abc import ABC, abstractmethod
 from typing import Any, Callable, Optional
 
 from pymongo.database import Database
 from pymongo.errors import DuplicateKeyError, PyMongoError
 
+from app.documentos.store import ejecutar_mongo
 from app.documentos.maquina_documento import ImagenMaquina, MaquinaDocumento
 
 logger = logging.getLogger(__name__)
@@ -58,7 +62,7 @@ def _lectura_tolerante(por_defecto: Callable[[], Any]):
             try:
                 return metodo(self, *args, **kwargs)
             except PyMongoError as error:
-                logger.warning("MongoDB no disponible al leer máquinas: %s", error)
+                logger.debug("Lectura omitida: %s", type(error).__name__)
                 return por_defecto()
 
         return envoltura
@@ -66,12 +70,43 @@ def _lectura_tolerante(por_defecto: Callable[[], Any]):
     return decorador
 
 
+def _escritura_mongo(metodo):
+    @functools.wraps(metodo)
+    def envoltura(self, *args, **kwargs):
+        try:
+            return ejecutar_mongo(lambda: metodo(self, *args, **kwargs))
+        finally:
+            with self._lock:
+                self._cache.clear()
+    return envoltura
+
+
 class MaquinaDocumentosMongo(MaquinaDocumentosLector, MaquinaDocumentosEscritor):
     COLECCION = "maquinas"
 
     def __init__(self, base_datos: Database) -> None:
         self._col = base_datos[self.COLECCION]
+        self._cache = {}
+        self._lock = threading.RLock()
+        self._ttl = float(os.environ.get("MSPS_CACHE_CATALOGO_TTL", "30"))
 
+    def _recordar(self, clave, consulta):
+        with self._lock:
+            entrada = self._cache.get(clave)
+            if entrada and entrada[0] > time.monotonic():
+                return copy.deepcopy(entrada[1])
+            resultado = ejecutar_mongo(consulta)
+            if len(self._cache) >= 256:
+                self._cache.clear()
+            self._cache[clave] = (time.monotonic() + self._ttl, resultado)
+            return copy.deepcopy(resultado)
+
+    def _portadas(self):
+        return self._recordar("portadas", lambda: list(self._col.find(
+            {}, {"_id": 0, "placa": 1, "slug": 1, "identidad.categoria": 1, "imagenes": 1}
+        )))
+
+    @_escritura_mongo
     def asegurar_indices(self) -> None:
         """slug es la identidad del documento; placa se consulta en cada detalle."""
         self._col.create_index("slug", unique=True)
@@ -79,18 +114,18 @@ class MaquinaDocumentosMongo(MaquinaDocumentosLector, MaquinaDocumentosEscritor)
 
     @_lectura_tolerante(lambda: None)
     def obtener_por_placa(self, placa: str) -> Optional[MaquinaDocumento]:
-        fila = self._col.find_one({"placa": placa}, {"_id": 0})
+        fila = self._recordar(("ficha", placa), lambda: self._col.find_one({"placa": placa}, {"_id": 0}))
         return MaquinaDocumento.from_document(fila) if fila else None
 
     @_lectura_tolerante(list)
     def listar(self) -> list[MaquinaDocumento]:
-        return [MaquinaDocumento.from_document(f) for f in self._col.find({}, {"_id": 0})]
+        return ejecutar_mongo(lambda: [MaquinaDocumento.from_document(f) for f in self._col.find({}, {"_id": 0})])
 
     @_lectura_tolerante(dict)
     def portadas_por_placa(self) -> dict[str, ImagenMaquina]:
         # Proyección: solo se traen placa e imágenes, no la ficha completa.
         portadas: dict[str, ImagenMaquina] = {}
-        for fila in self._col.find({}, {"_id": 0, "placa": 1, "imagenes": 1}):
+        for fila in self._portadas():
             for imagen in fila.get("imagenes", []):
                 if imagen.get("portada"):
                     portadas[fila["placa"]] = ImagenMaquina.from_document(imagen)
@@ -100,7 +135,7 @@ class MaquinaDocumentosMongo(MaquinaDocumentosLector, MaquinaDocumentosEscritor)
     @_lectura_tolerante(dict)
     def portadas_por_categoria(self) -> dict[str, ImagenMaquina]:
         portadas: dict[str, ImagenMaquina] = {}
-        filas = self._col.find({}, {"_id": 0, "slug": 1, "identidad.categoria": 1, "imagenes": 1})
+        filas = self._portadas()
         for fila in sorted(filas, key=lambda f: f["slug"]):  # orden fijo: siempre la misma foto
             categoria = fila["identidad"]["categoria"]
             if categoria in portadas:
@@ -111,6 +146,7 @@ class MaquinaDocumentosMongo(MaquinaDocumentosLector, MaquinaDocumentosEscritor)
                     break
         return portadas
 
+    @_escritura_mongo
     def insertar_si_falta(self, documento: MaquinaDocumento) -> bool:
         if self._col.find_one({"$or": [{"slug": documento.slug}, {"placa": documento.placa}]}, {"_id": 1}):
             return False
@@ -120,9 +156,11 @@ class MaquinaDocumentosMongo(MaquinaDocumentosLector, MaquinaDocumentosEscritor)
             return False  # otro worker lo creó justo antes
         return True
 
+    @_escritura_mongo
     def actualizar_imagenes(self, placa: str, imagenes: list[ImagenMaquina]) -> None:
         self._col.update_one({"placa": placa}, {"$set": {"imagenes": [i.to_document() for i in imagenes]}})
 
+    @_escritura_mongo
     def guardar(self, documento: MaquinaDocumento) -> bool:
         nuevo = documento.to_document()
         existente = self._col.find_one({"slug": documento.slug}, {"_id": 0})
@@ -136,5 +174,3 @@ class MaquinaDocumentosMongo(MaquinaDocumentosLector, MaquinaDocumentosEscritor)
             # Otro worker lo insertó en el mismo instante: se reintenta como reemplazo.
             self._col.replace_one({"slug": documento.slug}, nuevo)
         return True
-
-

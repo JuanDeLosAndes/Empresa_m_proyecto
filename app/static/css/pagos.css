@@ -1,0 +1,24 @@
+.pago-container { max-width: 1120px; color: #24272d; }
+.pago-titulo { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin: 28px 0; }
+.pago-titulo h1 { margin: 6px 0; font-size: clamp(26px, 4vw, 36px); }
+.pago-etiqueta { font-size: 12px; font-weight: 700; letter-spacing: .12em; color: #666a71; }
+.pago-grid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(300px, 1fr); gap: 24px; align-items: start; }
+.pago-panel { border: 1px solid #d9dce0; border-radius: 16px; background: #f2f3f5; padding: 28px; box-shadow: 0 5px 22px #00000008; }
+.pago-panel h2 { margin: 0 0 20px; font-size: 21px; }
+.pago-linea { display: flex; justify-content: space-between; align-items: start; gap: 20px; padding: 16px 0; border-bottom: 1px solid #d9dce0; }
+.pago-linea p { margin: 5px 0 0; color: #656971; font-size: 14px; }
+.pago-total { margin-bottom: 24px; font-size: 20px; color: #bd420b; }
+.pago-label { display: block; margin: 0 0 8px; font-weight: 600; }
+.pago-input { display: block; width: 100%; box-sizing: border-box; min-height: 48px; padding: 12px; border: 1px solid #bdc2ca; border-radius: 8px; font: inherit; background: white; margin: 0 0 18px; }
+.pago-input:focus-visible { outline: 3px solid #fbb48d; outline-offset: 2px; }
+.pago-nota { color: #60656e; font-size: 14px; line-height: 1.6; margin: 18px 0; }
+.pago-aviso { border: 1px solid #dac9a7; background: #fff8e9; color: #60471c; padding: 16px; border-radius: 10px; line-height: 1.6; margin: 16px 0; }
+.pago-aviso.error { background: #fff0ee; border-color: #e1b2ab; color: #8b2a1b; }
+.pago-aviso.exito { background: #eaf4ed; border-color: #b8d8c2; color: #245538; }
+.pago-referencia { overflow-wrap: anywhere; font-size: 14px; }
+.pago-historial { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 18px; padding: 20px 0; border-bottom: 1px solid #d9dce0; color: inherit; text-decoration: none; }
+.pago-historial:hover { color: #b43d08; }
+.pago-historial p { margin: 6px 0; }
+.pago-container a:focus-visible { outline: 3px solid #f58b4f; }
+.pago-container .btn-pagar:disabled { opacity: .6; cursor: wait; }
+@media (max-width: 768px) { .pago-grid { grid-template-columns: 1fr; } .pago-panel { padding: 20px; } }

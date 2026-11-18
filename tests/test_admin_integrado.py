@@ -31,7 +31,10 @@ def test_admin_crea_edita_y_sube_imagenes(clientes):
     for ruta in ("/", "/maquinas", "/maquinas?categoria=Excavadora", "/admin/maquinas"):
         respuesta = admin.get(ruta)
         assert respuesta.status_code == 200
-        assert "data-abrir-alta" in respuesta.text
+        if ruta == "/":
+            assert 'aria-label="Abrir catálogo"' in respuesta.text
+        else:
+            assert "data-abrir-alta" in respuesta.text
     datos = dict(marca="Prueba", modelo="Nueva", placa="PRUEBA-999", id_categoria=categoria,
                  costo_por_hora=95000, capacidad="1 m3", descripcion="Equipo de prueba", disponible=True)
     assert visitante.post("/admin/maquinas", json=datos, follow_redirects=False).status_code == 303
@@ -64,7 +67,7 @@ def test_admin_crea_edita_y_sube_imagenes(clientes):
 
 def test_persona_no_puede_editar_y_acceso_comun(clientes):
     admin, usuario = clientes
-    usuario.post("/registro/persona", data=dict(cedula="test-43", usuario="persona43", correo="p43@example.org", contrasena="prueba"))
+    UsuarioModel.crear_persona_natural(nombre="persona43", cedula="test-43", correo="p43@example.org", contrasena="prueba")
     usuario.post("/login", data=dict(identificador="p43@example.org", contrasena="prueba"))
     maquina = MaquinariaModel.listar()[0]
     datos = dict(costo_por_hora=1, capacidad="", descripcion="", disponible=True)

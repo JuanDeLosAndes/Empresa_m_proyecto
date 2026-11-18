@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from decimal import Decimal, ROUND_HALF_UP
 from typing import TYPE_CHECKING, Protocol
 
 from app.models.carrito_item import CarritoItem
@@ -10,6 +11,10 @@ if TYPE_CHECKING:  # solo para los tipos; evita importaciones circulares en tiem
     from app.repositories.carrito_repository import CarritoRepositorioBase
 
 TASA_IVA = 0.19
+
+
+def dinero(valor) -> float:
+    return float(Decimal(str(valor)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))
 
 
 class MaquinaNoEncontrada(LookupError):
@@ -23,7 +28,7 @@ class LineaCarrito:
 
     @property
     def total(self) -> float:
-        return (self.maquina.costo_por_hora or 0) * self.horas
+        return dinero(Decimal(str(self.maquina.costo_por_hora or 0)) * self.horas)
 
 
 @dataclass(frozen=True)
@@ -33,15 +38,15 @@ class ResumenCarrito:
 
     @property
     def subtotal(self) -> float:
-        return sum(linea.total for linea in self.lineas)
+        return dinero(sum((Decimal(str(linea.total)) for linea in self.lineas), Decimal(0)))
 
     @property
     def iva(self) -> float:
-        return self.subtotal * self.tasa_iva
+        return dinero(Decimal(str(self.subtotal)) * Decimal(str(self.tasa_iva)))
 
     @property
     def total(self) -> float:
-        return self.subtotal + self.iva
+        return dinero(Decimal(str(self.subtotal)) + Decimal(str(self.iva)))
 
 
 class ConsultaMaquinaria(Protocol):
@@ -100,4 +105,17 @@ class CarritoModel:
             if maquina and maquina.disponible and (maquina.costo_por_hora or 0) > 0:
                 lineas.append(LineaCarrito(maquina, item.horas))
         return ResumenCarrito(lineas)
+
+
+    def resumen_para_pago(self) -> ResumenCarrito:
+        resumen = self.resumen()
+        if not resumen.lineas:
+            raise ValueError("El carrito está vacío o sus máquinas ya no están disponibles.")
+        if len(resumen.lineas) != len(self._repositorio.leer()):
+            raise ValueError("Hay máquinas no disponibles o que requieren cotización. Revisa tu carrito antes de pagar.")
+        return resumen
+
+    def retirar_pagados(self, lineas: list[dict]) -> None:
+        pagados = {(l["id_maquinaria"], l["horas"]) for l in lineas}
+        self._repositorio.guardar([i for i in self._repositorio.leer() if (i.id_maquinaria, i.horas) not in pagados])
 

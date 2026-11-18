@@ -1,11 +1,10 @@
-
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import RedirectResponse
 
 from app.builders import PageContextBuilder
 from app.controllers.dependencias import exigir_sesion
 from app.current_user import SesionActual, obtener_sesion_actual
-from app.factories import crear_carrito
+from app.factories import crear_carrito, crear_catalogo_fotos
 from app.models.carrito import MaquinaNoEncontrada, RequiereCotizacion, MaquinaNoDisponible
 from pydantic import BaseModel, Field
 from app.templating import templates
@@ -26,13 +25,13 @@ class ItemNuevo(ItemId):
 
 
 @router.get("/api/verificar-login")
-async def verificar_login(request: Request):
+def verificar_login(request: Request):
     """Verifica si el usuario está logueado"""
     return {"logueado": obtener_sesion_actual(request) is not None}
 
 
 @router.get("/api/carrito/cantidad")
-async def cantidad_carrito(request: Request):
+def cantidad_carrito(request: Request):
     """Devuelve cuántas máquinas hay en el carrito (0 si no hay sesión)"""
     if obtener_sesion_actual(request) is None:
         return {"cantidad": 0}
@@ -83,7 +82,7 @@ def eliminar_anterior(request: Request, data: ItemId, sesion: SesionActual = Dep
 
 
 @router.get("/carrito")
-async def ver_carrito(request: Request):
+def ver_carrito(request: Request):
     """Muestra el carrito"""
     sesion = obtener_sesion_actual(request)
     if not sesion:
@@ -99,22 +98,6 @@ async def ver_carrito(request: Request):
     )
     context["carrito"] = resumen.lineas
     context["resumen"] = resumen
+    context["portadas"] = crear_catalogo_fotos().portadas_por_placa() if resumen.lineas else {}
     return templates.TemplateResponse(request, "carrito.html", context)
-
-
-@router.get("/checkout")
-async def checkout(request: Request):
-    """Página de pago"""
-    sesion = obtener_sesion_actual(request)
-    if not sesion:
-        return RedirectResponse(url="/?acceso=login", status_code=302)
-
-    context = (
-        PageContextBuilder()
-        .with_title("Checkout")
-        .with_active_nav("Buscar Maquina")
-        .with_sesion(sesion)
-        .build()
-    )
-    return templates.TemplateResponse(request, "checkout.html", context)
 

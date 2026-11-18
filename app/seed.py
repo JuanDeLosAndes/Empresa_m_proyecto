@@ -1,24 +1,3 @@
-# ======================================================================
-# QUÉ HACE
-#   Carga los datos iniciales cada vez que arranca la app: categorías y 4 máquinas de
-#   ejemplo, un administrador por defecto, y el catálogo real (filas en SQL +
-#   fichas técnicas en MongoDB).
-# HASTA DÓNDE LLEGA (y qué NO hace)
-#   Solo siembra. Es idempotente: si ya existe, no duplica ni pisa. NO siembra fotos:
-#   las sube el administrador desde /admin/maquinas y viven solo en MongoDB. Si
-#   MongoDB no responde, deja el error en el log y el sitio sigue funcionando. No
-#   define los datos reales (catalogo_maquinas.py).
-# ======================================================================
-"""
-Datos de ejemplo de MSPS.
-
-Reemplaza las máquinas y categorías que antes estaban escritas a mano
-directamente en las plantillas (buscar_maquinas.html, detalle_maquina.html),
-lo cual violaba MVC: una Vista no debería contener datos de negocio,
-esos datos deben venir del Modelo. `seed_demo_data()` es idempotente
-(usa INSERT OR IGNORE) así que se puede llamar en cada arranque sin
-duplicar filas.
-"""
 from __future__ import annotations
 
 import logging
@@ -30,6 +9,7 @@ from pymongo.errors import PyMongoError
 
 from app.catalogo_maquinas import TARIFAS_COP_POR_HORA, construir_catalogo
 from app.database import get_connection
+from app.documentos.store import ejecutar_mongo
 from app.factories import crear_candado_repositorio, crear_maquina_documentos_repositorio
 from app.models.categoria import CategoriaModel
 from app.models.maquinaria import MaquinariaModel
@@ -97,7 +77,7 @@ def seed_catalogo_real() -> None:
         _sembrar_mongo(catalogo)
     except PyMongoError as error:
         logger.error(
-            "No se pudo cargar el catálogo en MongoDB (revisa MONGODB_URI): %s", error
+            "No se pudo cargar el catálogo en MongoDB (revisa MONGODB_URI): %s", type(error).__name__
         )
 
 
@@ -109,7 +89,7 @@ def _sembrar_mongo(catalogo) -> None:
     que ya existe: así no borra las fotos ni las ediciones que haya hecho el admin.
     """
     candado = crear_candado_repositorio()  # Factory Method
-    if not candado.adquirir("seed_catalogo"):
+    if not ejecutar_mongo(lambda: candado.adquirir("seed_catalogo")):
         # Otro proceso (p. ej. el padre/hijo de uvicorn --reload) ya está cargando el
         # catálogo: no se compite con él.
         logger.info("Otro proceso está cargando el catálogo en MongoDB; se omite aquí.")
@@ -120,7 +100,7 @@ def _sembrar_mongo(catalogo) -> None:
         for doc in catalogo:
             documentos.insertar_si_falta(replace(doc, imagenes=[]))
     finally:
-        candado.liberar("seed_catalogo")
+        ejecutar_mongo(lambda: candado.liberar("seed_catalogo"))
 
 
 def seed_demo_data() -> None:
@@ -162,21 +142,3 @@ def seed_demo_data() -> None:
         )
 
     seed_catalogo_real()
-
-# ======================================================================
-# CÓMO LO HACE (en concreto)
-#   - seed_demo_data(): crea categorías y las 4 máquinas de ejemplo si faltan, crea
-#     el usuario admin si no hay ningún administrador, y al final llama
-#     seed_catalogo_real().
-#   - seed_catalogo_real(): construye el catálogo; por cada máquina crea su categoría
-#     si falta e inserta la fila SQL si la placa no existe (tarifa =
-#     TARIFAS_COP_POR_HORA.get(placa, 0)).
-#   - _sembrar_mongo(): toma el candado; por cada máquina crea su documento (sin
-#     fotos) con documentos.insertar_si_falta(...), que nunca pisa uno existente;
-#     suelta el candado en el finally. Las fotos las gestiona el administrador.
-# USA
-#   catalogo_maquinas.py, models/categoria.py, models/maquinaria.py,
-#   models/usuario.py, factories.py (candado, documentos).
-# DÓNDE SE LLAMA
-#   app/__init__.py: seed_demo_data() dentro de create_app().
-# ======================================================================

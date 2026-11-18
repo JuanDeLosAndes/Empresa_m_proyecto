@@ -1,36 +1,45 @@
-
-
 from __future__ import annotations
 
 from contextlib import contextmanager
 import sqlite3
+import os
+import threading
 from pathlib import Path
 from typing import Optional
 
 BASE_DIR = Path(__file__).resolve().parent
-DB_PATH = BASE_DIR / "msps.db"
+DB_PATH = Path(os.environ.get("MSPS_DB_PATH", str(BASE_DIR / "msps.db")))
 SCHEMA_PATH = BASE_DIR / "schema.sql"
 
 
 class Database:
-
+    """Una conexión SQLite por hilo; las transacciones de escritura son independientes."""
     _instance: Optional["Database"] = None
+    _lock = threading.Lock()
 
     def __new__(cls) -> "Database":
         if cls._instance is None:
-            instance = super().__new__(cls)
-            instance._connection = sqlite3.connect(
-                DB_PATH,
-                check_same_thread=False,
-            )
-            instance._connection.row_factory = sqlite3.Row
-            instance._connection.execute("PRAGMA foreign_keys = ON")
-            cls._instance = instance
+            with cls._lock:
+                if cls._instance is None:
+                    instance = super().__new__(cls)
+                    instance._local = threading.local()
+                    cls._instance = instance
         return cls._instance
 
     @property
     def connection(self) -> sqlite3.Connection:
-        return self._connection
+        if not hasattr(self._local, "connection"):
+            self._local.connection = abrir_conexion()
+        return self._local.connection
+
+
+def abrir_conexion() -> sqlite3.Connection:
+    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+    conn = sqlite3.connect(DB_PATH, timeout=10)
+    conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA foreign_keys = ON")
+    conn.execute("PRAGMA busy_timeout = 10000")
+    return conn
 
 
 def get_connection() -> sqlite3.Connection:
@@ -107,8 +116,7 @@ def init_db() -> None:
 @contextmanager
 def transaccion():
     """Conexión independiente para cada operación de cotización o afiliación."""
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
+    conn = abrir_conexion()
     try:
         conn.execute("PRAGMA foreign_keys = ON")
         with conn:

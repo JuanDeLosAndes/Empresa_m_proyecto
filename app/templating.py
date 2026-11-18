@@ -1,18 +1,17 @@
-# ======================================================================
-# QUÉ HACE
-#   Crea el motor de plantillas (Jinja2) que convierte los archivos .html de
-#   app/templates en páginas completas con datos.
-# HASTA DÓNDE LLEGA (y qué NO hace)
-#   Solo configura el motor. No arma los datos de la página (eso lo hace builders.py)
-#   ni decide qué plantilla se usa (eso lo hace cada controlador).
-# ======================================================================
-
 from __future__ import annotations
 
 from pathlib import Path
 from typing import Optional
 
 from fastapi.templating import Jinja2Templates
+from jinja2 import pass_context
+
+
+@pass_context
+def url_local(context, name, **params):
+    """URLs del mismo sitio: evita HTTP mezclado con HTTPS detrás de Azure."""
+    return context["request"].url_for(name, **params).path
+
 
 TEMPLATES_DIR = Path(__file__).resolve().parent / "templates"
 
@@ -26,6 +25,7 @@ class TemplateEngine:
         if cls._instance is None:
             instance = super().__new__(cls)
             instance._templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
+            instance._templates.env.globals["url_for"] = url_local
             cls._instance = instance
         return cls._instance
 

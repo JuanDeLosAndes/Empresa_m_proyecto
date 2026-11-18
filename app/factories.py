@@ -1,4 +1,3 @@
-
 from __future__ import annotations
 
 import os
@@ -31,6 +30,8 @@ TipoRegistro = Literal["persona_natural", "empresa"]
 # nacería vacía y nunca serviría de nada.
 _proxy_imagenes: Optional[ImagenesProxyConCache] = None
 _candado_proxy = threading.Lock()
+_documentos = None
+_candado_documentos = threading.Lock()
 
 
 def crear_carrito_repositorio(request: Request) -> CarritoRepositorioBase:
@@ -57,7 +58,12 @@ def crear_maquina_documentos_repositorio() -> MaquinaDocumentosMongo:
     resultado tipado como las interfaces MaquinaDocumentosLector /
     MaquinaDocumentosEscritor.
     """
-    return MaquinaDocumentosMongo(get_mongo_database())
+    global _documentos
+    if _documentos is None:
+        with _candado_documentos:
+            if _documentos is None:
+                _documentos = MaquinaDocumentosMongo(get_mongo_database())
+    return _documentos
 
 
 def crear_imagenes_repositorio() -> ImagenesProxyConCache:
@@ -134,7 +140,6 @@ class AuthFormFactory:
                 {"name": "contrasena", "label": "Contraseña", "type": "password", "placeholder": "Contraseña"},
             ]
         raise ValueError(f"Tipo de registro no soportado: {tipo}")
-
 
 
 

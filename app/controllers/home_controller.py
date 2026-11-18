@@ -1,5 +1,3 @@
-
-
 from fastapi import APIRouter, HTTPException, Request
 
 from app.builders import PageContextBuilder
@@ -22,7 +20,7 @@ def _urls_de_imagenes(request: Request, imagenes: dict[str, ImagenCategoria]) ->
             url = request.url_for("imagen_maquina", archivo=imagen.ruta)
         else:
             url = request.url_for("static", path=imagen.ruta)
-        resultado[nombre] = {"url": str(url), "foto": imagen.es_foto}
+        resultado[nombre] = {"url": url.path, "foto": imagen.es_foto}
     return resultado
 
 

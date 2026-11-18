@@ -1,4 +1,3 @@
-
 import os
 import sys
 import uuid
@@ -26,3 +25,15 @@ def pytest_sessionfinish(session, exitstatus):
         from app.documentos.store import MongoConnection
 
         MongoConnection()._client.drop_database(_NOMBRE_DB)
+
+
+import pytest
+
+
+@pytest.fixture(autouse=True)
+def aislar_caches_y_fallos(monkeypatch):
+    from app.documentos import store
+    from app import factories
+    monkeypatch.setattr(store, "_disponibilidad", store.DisponibilidadMongo())
+    monkeypatch.setattr(factories, "_documentos", None)
+    monkeypatch.setattr(factories, "_proxy_imagenes", None)

@@ -1,4 +1,5 @@
 from pathlib import Path
+import time
 
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
@@ -11,7 +12,7 @@ from app.controllers import (
     home_controller,
     media_controller,
 )
-from app.controllers import afiliacion_controller, cotizacion_controller
+from app.controllers import afiliacion_controller, cotizacion_controller, pago_controller, diagnostico_controller
 from app.database import init_db
 from app.seed import seed_demo_data
 from app.security import SECRET_KEY
@@ -25,6 +26,13 @@ def create_app() -> FastAPI:
         title="MSPS - Maquiservicio Pérez SAS",
         description="Plataforma de alquiler de maquinaria pesada.",
     )
+
+    @app.middleware("http")
+    async def medir_tiempo(request, call_next):
+        inicio = time.perf_counter()
+        respuesta = await call_next(request)
+        respuesta.headers["Server-Timing"] = f"app;dur={(time.perf_counter() - inicio) * 1000:.1f}"
+        return respuesta
 
     # SessionMiddleware
     app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY)
@@ -46,5 +54,9 @@ def create_app() -> FastAPI:
     app.include_router(admin_controller.router)
     app.include_router(afiliacion_controller.router)
     app.include_router(cotizacion_controller.router)
+
+    app.include_router(pago_controller.router)
+
+    app.include_router(diagnostico_controller.router)
 
     return app

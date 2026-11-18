@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="carrito-container pago-container">
+    <div class="pago-titulo"><h1>{{ 'Pagos recibidos' if sesion.tipo == 'administrador' else 'Mis pagos' }}</h1><a href="/carrito">Ver carrito</a></div>
+    <p class="pago-nota">Últimos 100 pedidos. Los pagos de prueba aparecen identificados.</p>
+    {% if aviso %}<p class="pago-aviso" role="status">No se pudo conciliar. Revisa la configuración y el ID de transacción en Wompi.</p>{% endif %}
+    {% if sesion.tipo == 'administrador' %}
+    <details class="pago-panel">
+        <summary>Consultar una transacción pendiente en Wompi</summary>
+        <p class="pago-nota">Si un pago no se actualizó, copia su ID desde el panel de Wompi.</p>
+        <form method="post" action="/admin/pagos/conciliar">
+            <input type="hidden" name="csrf" value="{{ csrf }}">
+            <label class="pago-label" for="transaccion-wompi">ID de transacción</label>
+            <input class="pago-input" id="transaccion-wompi" name="transaccion_id" maxlength="150" required>
+            <button class="btn-pagar" type="submit">Consultar y actualizar</button>
+        </form>
+    </details>
+    {% endif %}
+    <div class="pago-panel">
+        {% for pedido in pedidos %}
+        <a class="pago-historial" href="/pagos/resultado?referencia={{ pedido.referencia }}">
+            <div><strong>{{ pedido.nombre }}</strong><p class="pago-referencia">{{ pedido.referencia }}</p><span>{{ 'PRUEBA · ' if pedido.ambiente == 'test' else '' }}{{ {'PENDING':'Pendiente', 'APPROVED':'Aprobado', 'DECLINED':'Rechazado', 'ERROR':'Error', 'VOIDED':'Anulado'}.get(pedido.estado) }}</span></div>
+            <strong>${{ '{:,.2f}'.format(pedido.total_centavos / 100) }} COP →</strong>
+        </a>
+        {% else %}<p>Aún no hay pedidos de pago.</p>{% endfor %}
+    </div>
+</section>
+{% endblock %}

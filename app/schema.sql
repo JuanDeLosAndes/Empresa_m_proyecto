@@ -143,3 +143,34 @@ CREATE TABLE IF NOT EXISTS registros_pendientes (
 );
 
 
+
+-- Pedidos de pago: conserva el precio y las horas que se confirmaron al pagar.
+-- La identidad del comprador incluye el tipo: empresas y usuarios tienen IDs distintos.
+CREATE TABLE IF NOT EXISTS pedidos_pago (
+    referencia TEXT PRIMARY KEY,
+    propietario_tipo TEXT NOT NULL,
+    propietario_id INTEGER NOT NULL,
+    nombre TEXT NOT NULL,
+    correo TEXT NOT NULL,
+    ambiente TEXT NOT NULL CHECK(ambiente IN ('test', 'prod')),
+    huella TEXT NOT NULL,
+    lineas_json TEXT NOT NULL,
+    subtotal_centavos INTEGER NOT NULL CHECK(subtotal_centavos >= 0),
+    iva_centavos INTEGER NOT NULL CHECK(iva_centavos >= 0),
+    total_centavos INTEGER NOT NULL CHECK(total_centavos > 0),
+    estado TEXT NOT NULL DEFAULT 'PENDING'
+        CHECK(estado IN ('PENDING', 'APPROVED', 'DECLINED', 'ERROR', 'VOIDED')),
+    transaccion_id TEXT UNIQUE,
+    metodo_pago TEXT,
+    creada INTEGER NOT NULL,
+    vence INTEGER NOT NULL,
+    vence_iso TEXT NOT NULL,
+    pagada INTEGER,
+    actualizada INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_pedidos_propietario
+ON pedidos_pago(propietario_tipo, propietario_id, creada DESC);
+CREATE INDEX IF NOT EXISTS idx_pedidos_pendientes
+ON pedidos_pago(propietario_tipo, propietario_id, ambiente, huella, estado);
+
+

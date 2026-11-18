@@ -195,3 +195,8 @@
         align-items: flex-start;
     }
 }
+.carrito-item { gap: 20px; align-items: flex-start; }
+.carrito-foto { flex: 0 0 160px; text-decoration: none; color: #62656b; }
+.carrito-foto img { display: block; width: 160px; height: 120px; object-fit: cover; border-radius: 10px; background: #e4e5e7; }
+.carrito-foto small { display: block; margin-top: 5px; font-size: 12px; }
+@media (max-width: 768px) { .carrito-foto { flex-basis: auto; } }

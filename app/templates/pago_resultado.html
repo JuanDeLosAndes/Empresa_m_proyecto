@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="carrito-container pago-container">
+    {% set nombres = {'PENDING':'Esperando confirmación', 'APPROVED':'Pago aprobado', 'DECLINED':'Pago rechazado', 'ERROR':'El pago no se completó', 'VOIDED':'Pago anulado'} %}
+    <div class="pago-titulo"><div><p class="pago-etiqueta">ESTADO DEL PEDIDO</p><h1>{{ nombres.get(pedido.estado, pedido.estado) }}</h1></div><a href="/pagos">Mis pagos</a></div>
+    {% if pedido.ambiente == 'test' %}<p class="pago-aviso">Transacción de prueba: no representa un cobro real.</p>{% endif %}
+    <div class="pago-panel" data-pago-referencia="{{ pedido.referencia }}" data-pago-estado="{{ pedido.estado }}">
+        <p class="pago-referencia"><strong>Referencia:</strong> {{ pedido.referencia }}</p>
+        <p><strong>Pagador:</strong> {{ pedido.nombre }}</p>
+        {% if pedido.transaccion_id %}<p class="pago-referencia"><strong>Transacción Wompi:</strong> {{ pedido.transaccion_id }}</p>{% endif %}
+        {% for linea in lineas %}
+        <div class="pago-linea"><div><strong>{{ linea.nombre }}</strong><p>{{ linea.placa }} · {{ linea.horas }} hora{{ 's' if linea.horas != 1 else '' }}</p></div><strong>${{ '{:,.2f}'.format(linea.total_centavos / 100) }}</strong></div>
+        {% endfor %}
+        <div class="pago-linea"><span>IVA</span><span>${{ '{:,.2f}'.format(pedido.iva_centavos / 100) }}</span></div>
+        <div class="pago-linea pago-total"><strong>Total COP</strong><strong>${{ '{:,.2f}'.format(pedido.total_centavos / 100) }}</strong></div>
+        {% if pedido.estado == 'APPROVED' %}
+            <p class="pago-aviso exito">Tu pago está confirmado. Conserva esta referencia y coordina la entrega y el horario con el equipo.</p>
+            <p class="pago-nota">Este comprobante de pago no sustituye la factura electrónica.</p>
+            {% if pedido.propietario_tipo == sesion.tipo and pedido.propietario_id == sesion.id %}
+            <form method="post" action="/pagos/{{ pedido.referencia }}/limpiar-carrito">
+                <input type="hidden" name="csrf" value="{{ csrf }}">
+                <button class="btn-pagar" type="submit">Retirar del carrito los equipos pagados</button>
+            </form>
+            {% endif %}
+        {% elif pedido.estado == 'PENDING' %}
+            <p class="pago-aviso" role="status" id="pago-espera">Aún no hemos recibido la confirmación del pago. El estado se actualizará aquí; evita pagar nuevamente mientras se confirma.</p>
+            <a class="equipo-btn secundaria" href="/pagos/resultado?referencia={{ pedido.referencia }}">Actualizar estado</a>
+        {% else %}
+            <p class="pago-aviso">Consulta el resultado en Wompi antes de intentar un pago nuevo.</p>
+            <a class="equipo-btn secundaria" href="/checkout">Volver al pedido</a>
+        {% endif %}
+    </div>
+</section>
+<script src="/static/js/pagos.js" defer></script>
+{% endblock %}

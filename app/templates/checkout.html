@@ -1,14 +1,38 @@
 {% extends "base.html" %}
-
 {% block content %}
-<div class="checkout-container">
-    <div class="checkout-header">
-        <button class="btn-volver" onclick="window.location.href='/carrito'">← Volver al carrito</button>
-        <h1>Checkout</h1>
+<section class="carrito-container pago-container">
+    <a class="btn-volver" href="/carrito">← Volver al carrito</a>
+    <div class="pago-titulo"><div><p class="pago-etiqueta">ALQUILER DE MAQUINARIA</p><h1>Confirma tu pedido</h1></div><a href="/pagos">Mis pagos</a></div>
+    {% if error %}<p class="pago-aviso error" role="alert">{{ error }}</p>{% endif %}
+    {% if resumen.lineas %}
+    <div class="pago-grid">
+        <div class="pago-panel">
+            <h2>Equipos seleccionados</h2>
+            {% for linea in resumen.lineas %}
+            <div class="pago-linea"><div><strong>{{ linea.maquina.marca }} {{ linea.maquina.modelo or '' }}</strong><p>{{ linea.maquina.placa }} · {{ linea.horas }} hora{{ 's' if linea.horas != 1 else '' }}</p></div><strong>${{ '{:,.2f}'.format(linea.total) }}</strong></div>
+            {% endfor %}
+            <p class="pago-nota">El valor corresponde a las horas indicadas. Coordina con el equipo la entrega y el horario del alquiler.</p>
+        </div>
+        <div class="pago-panel">
+            <h2>Resumen del pago</h2>
+            <div class="pago-linea"><span>Subtotal</span><span>${{ '{:,.2f}'.format(resumen.subtotal) }}</span></div>
+            <div class="pago-linea"><span>IVA ({{ (resumen.tasa_iva * 100)|round|int }}%)</span><span>${{ '{:,.2f}'.format(resumen.iva) }}</span></div>
+            <div class="pago-linea pago-total"><strong>Total COP</strong><strong>${{ '{:,.2f}'.format(resumen.total) }}</strong></div>
+            {% if pagos_habilitados %}
+                {% if ambiente == 'test' %}<p class="pago-aviso">Modo de prueba: este pago no mueve dinero real.</p>{% endif %}
+                <form method="post" action="/pagos/checkout" data-iniciar-pago>
+                    <input type="hidden" name="csrf" value="{{ csrf }}">
+                    <label class="pago-label" for="correo-pago">Correo del pagador</label>
+                    <input class="pago-input" type="email" id="correo-pago" name="correo" value="{{ correo }}" maxlength="254" required autocomplete="email">
+                    <button class="btn-pagar" type="submit">{{ 'Probar pago con Wompi' if ambiente == 'test' else 'Pagar con Wompi' }}</button>
+                </form>
+                <p class="pago-nota">Continuarás en Wompi para elegir un medio de pago. Tus datos de tarjeta se ingresan allí.</p>
+            {% else %}
+                <p class="pago-aviso">Los pagos en línea aún no están habilitados. Contacta al equipo para continuar.</p>
+            {% endif %}
+        </div>
     </div>
-
-    <div class="checkout-content">
-        <p>Página de pago en desarrollo...</p>
-    </div>
-</div>
+    {% else %}<div class="pago-panel"><p>No hay equipos disponibles en tu carrito.</p><a href="/maquinas">Ver catálogo</a></div>{% endif %}
+</section>
+<script src="/static/js/pagos.js" defer></script>
 {% endblock %}

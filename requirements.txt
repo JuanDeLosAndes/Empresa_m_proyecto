@@ -2,10 +2,10 @@ fastapi
 uvicorn
 gunicorn
 python-dotenv
-httpx
+httpx>=0.27,<1
 python-multipart
 jinja2
 aiofiles
-pymongo
+pymongo>=4.2,<5
 pillow
 itsdangerous

@@ -1,7 +1,7 @@
-
 from __future__ import annotations
 
 import hashlib
+import functools
 import logging
 import math
 from abc import ABC, abstractmethod
@@ -13,7 +13,16 @@ from gridfs.errors import FileExists, GridFSError, NoFile
 from pymongo.database import Database
 from pymongo.errors import DuplicateKeyError, PyMongoError
 
+from app.documentos.store import ejecutar_mongo
+
 logger = logging.getLogger(__name__)
+
+
+def _limite_mongo(metodo):
+    @functools.wraps(metodo)
+    def envoltura(self, *args, **kwargs):
+        return ejecutar_mongo(lambda: metodo(self, *args, **kwargs))
+    return envoltura
 
 
 @dataclass(frozen=True)
@@ -45,28 +54,33 @@ class ImagenesGridFS(ImagenesLector, ImagenesEscritor):
 
     def obtener(self, archivo: str) -> Optional[ImagenBinaria]:
         try:
-            salida = self._fs.get(archivo)
-            meta = salida.metadata or {}
-            return ImagenBinaria(
-                contenido=salida.read(),
-                tipo_contenido=meta.get("tipo_contenido", "image/jpeg"),
-                sha256=meta.get("sha256", ""),
-            )
+            return ejecutar_mongo(lambda: self._leer(archivo))
         except NoFile:
             return None
-        except (GridFSError, PyMongoError) as error:
-            logger.warning("No se pudo leer la imagen %s de MongoDB: %s", archivo, error)
+        except (GridFSError, PyMongoError):
             return None
+
+    def _leer(self, archivo):
+        salida = self._fs.get(archivo)
+        meta = salida.metadata or {}
+        return ImagenBinaria(
+            contenido=salida.read(),
+            tipo_contenido=meta.get("tipo_contenido", "image/jpeg"),
+            sha256=meta.get("sha256", ""),
+        )
+
 
     def _bloques_completos(self, registro) -> bool:
         """¿Están en fs.chunks todos los bloques que declara el registro?"""
         esperados = math.ceil(registro.length / registro.chunk_size) if registro.length else 0
         return self._chunks.count_documents({"files_id": registro._id}) == esperados
 
+    @_limite_mongo
     def eliminar(self, archivo: str) -> None:
         self._fs.delete(archivo)
         self._chunks.delete_many({"files_id": archivo})  # restos, si los hubiera
 
+    @_limite_mongo
     def guardar(self, archivo: str, contenido: bytes, tipo_contenido: str = "image/jpeg") -> bool:
         huella = hashlib.sha256(contenido).hexdigest()
         try:
