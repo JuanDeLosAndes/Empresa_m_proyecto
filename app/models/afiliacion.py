@@ -37,11 +37,12 @@ def panel_empresa(empresa):
 
 
 def solicitar(usuario, empresa):
-    with transaccion() as db:
-        db.execute("BEGIN IMMEDIATE")
+    with transaccion(serializar="afiliacion") as db:
         if not db.execute("SELECT 1 FROM empresas WHERE id_empresa = ?", (empresa,)).fetchone():
             raise RegistroNoEncontrado("Empresa no encontrada")
         actual = db.execute("SELECT id_empresa FROM usuarios WHERE id_usuario = ?", (usuario,)).fetchone()
+        if actual is None:
+            raise RegistroNoEncontrado("Usuario no encontrado")
         if actual["id_empresa"] is not None:
             raise SolicitudEnConflicto("Ya perteneces a una empresa")
         if db.execute("SELECT 1 FROM solicitudes_empresa WHERE id_usuario = ?", (usuario,)).fetchone():
@@ -50,7 +51,7 @@ def solicitar(usuario, empresa):
 
 
 def resolver(empresa, usuario, aceptar):
-    with transaccion() as db:
+    with transaccion(serializar="afiliacion") as db:
         borrada = db.execute("DELETE FROM solicitudes_empresa WHERE id_empresa = ? AND id_usuario = ?",
                              (empresa, usuario))
         if not borrada.rowcount:
@@ -63,7 +64,7 @@ def resolver(empresa, usuario, aceptar):
 
 
 def retirar(empresa, usuario):
-    with transaccion() as db:
+    with transaccion(serializar="afiliacion") as db:
         cambio = db.execute(
             """UPDATE usuarios SET id_empresa = NULL WHERE id_empresa = ? AND id_usuario = ?
                AND id_usuario IN (SELECT id_usuario FROM personas_naturales)""", (empresa, usuario),

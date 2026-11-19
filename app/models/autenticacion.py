@@ -1,10 +1,10 @@
 
 from __future__ import annotations
 
-import sqlite3
 from dataclasses import dataclass
 from typing import Optional
 
+from app.database import ERRORES_INTEGRIDAD
 from app.models.empresa import ROL_EMPRESA, EmpresaModel
 from app.models.usuario import UsuarioModel
 
@@ -23,7 +23,7 @@ class AutenticacionModel:
             UsuarioModel.crear_persona_natural(
                 nombre=usuario, contrasena=contrasena, cedula=cedula, correo=correo
             )
-        except sqlite3.IntegrityError:
+        except ERRORES_INTEGRIDAD:
             return False
         return True
 
@@ -32,7 +32,7 @@ class AutenticacionModel:
         """True si se creó la cuenta; False si ya existe (NIT o correo repetidos)."""
         try:
             EmpresaModel.crear(nombre=nombre_empresa, nit=nit, correo=correo, contrasena=contrasena)
-        except sqlite3.IntegrityError:
+        except ERRORES_INTEGRIDAD:
             return False
         return True
 
@@ -46,4 +46,3 @@ class AutenticacionModel:
         if empresa:
             return Credencial(tipo=ROL_EMPRESA, id=empresa.id_empresa)
         return None
-

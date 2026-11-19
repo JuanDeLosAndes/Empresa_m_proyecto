@@ -21,9 +21,7 @@ from app.security import SESSION_COOKIE_NAME, firmar_sesion
 
 
 @pytest.fixture
-def sitio(tmp_path, monkeypatch):
-    monkeypatch.setattr(database, "DB_PATH", tmp_path / "msps.db")
-    monkeypatch.setattr(database.Database, "_instance", None)
+def sitio(motor_sql, monkeypatch):
     for clave, valor in {
         "WOMPI_AMBIENTE": "test", "WOMPI_PUBLIC_KEY": "pub_test_unidad",
         "WOMPI_PRIVATE_KEY": "prv_test_unidad", "WOMPI_INTEGRITY_SECRET": "test_integrity_unidad",
@@ -32,7 +30,8 @@ def sitio(tmp_path, monkeypatch):
         monkeypatch.setenv(clave, valor)
     app = create_app()
     cliente = TestClient(app, base_url="https://alquiler.example")
-    id_admin = database.get_connection().execute("SELECT id_usuario FROM usuarios WHERE nombre='admin'").fetchone()[0]
+    with database.transaccion() as db:
+        id_admin = db.execute("SELECT id_usuario FROM usuarios WHERE nombre='admin'").fetchone()["id_usuario"]
     cliente.cookies.set(SESSION_COOKIE_NAME, firmar_sesion("administrador", id_admin))
     return cliente
 
@@ -96,9 +95,10 @@ def test_webhook_aprobado_idempotente_y_eventos_atrasados(sitio, monkeypatch):
         assert sitio.post("/api/pagos/wompi/eventos/test", json=e).status_code == 200
     referencia = p["reference"][0]
     assert sitio.get("/api/pagos/" + referencia).json()["estado"] == "APPROVED"
-    pago = database.get_connection().execute("SELECT * FROM pedidos_pago").fetchone()
-    assert pago["pagada"] and pago["transaccion_id"] == "tx-123"
-    assert database.get_connection().execute("SELECT COUNT(*) FROM pedidos_pago").fetchone()[0] == 1
+    with database.transaccion() as db:
+        pago = db.execute("SELECT * FROM pedidos_pago").fetchone()
+        assert pago["pagada"] and pago["transaccion_id"] == "tx-123"
+        assert db.execute("SELECT COUNT(*) AS n FROM pedidos_pago").fetchone()["n"] == 1
     atrasado = evento(p, "PENDING")
     monkeypatch.setattr(Wompi, "consultar", lambda self, ident: atrasado["data"]["transaction"])
     assert sitio.post("/api/pagos/wompi/eventos/test", json=atrasado).status_code == 200
@@ -196,7 +196,7 @@ def test_mongo_caido_no_repite_la_espera_y_se_recupera():
 def test_empresa_con_mismo_id_no_puede_ver_pedido_de_otro_tipo(sitio):
     p, _, _ = preparar(sitio)
     with database.transaccion() as db:
-        ident = db.execute("INSERT INTO empresas(nit,nombre,correo,contrasena_hash) VALUES ('900123456','Empresa','empresa@example.org','hash')").lastrowid
+        ident = db.execute("INSERT INTO empresas(nit,nombre,correo,contrasena_hash) VALUES ('900123456','Empresa','empresa@example.org','hash') RETURNING id_empresa").fetchone()["id_empresa"]
     cliente = TestClient(sitio.app)
     cliente.cookies.set(SESSION_COOKIE_NAME, firmar_sesion("empresa", ident))
     referencia = p["reference"][0]

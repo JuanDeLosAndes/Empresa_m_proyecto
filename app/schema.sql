@@ -66,7 +66,8 @@ CREATE TABLE IF NOT EXISTS maquinarias (
     costo_por_hora  REAL NOT NULL CHECK (costo_por_hora >= 0),
     placa           TEXT NOT NULL UNIQUE,
     disponible      INTEGER NOT NULL DEFAULT 1 CHECK(disponible IN (0, 1)),
-    id_categoria    INTEGER NOT NULL REFERENCES categorias(id_categoria) ON DELETE RESTRICT
+    id_categoria    INTEGER NOT NULL REFERENCES categorias(id_categoria) ON DELETE RESTRICT,
+    eliminada       INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE INDEX IF NOT EXISTS idx_maquinarias_id_categoria ON maquinarias(id_categoria);

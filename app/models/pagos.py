@@ -18,6 +18,17 @@ def centavos(valor) -> int:
     return int((numero * 100).quantize(Decimal("1"), rounding=ROUND_HALF_UP))
 
 
+def acepta_actualizacion(pedido: dict, transaccion: dict) -> bool:
+    if pedido["transaccion_id"] and pedido["transaccion_id"] != transaccion["id"]:
+        raise ValueError("La referencia ya está asociada a otra transacción.")
+    anterior, nuevo = pedido["estado"], transaccion["status"]
+    if anterior == "VOIDED":
+        return False
+    if anterior == "APPROVED":
+        return nuevo == "VOIDED"
+    return not (anterior in {"DECLINED", "ERROR"} and nuevo == "PENDING")
+
+
 class Pasarela(Protocol):
     ambiente: str
     def url_checkout(self, pedido: dict) -> str: ...
@@ -29,6 +40,31 @@ class Pedidos(Protocol):
     def crear_o_reutilizar(self, pedido: dict) -> dict: ...
     def obtener(self, referencia: str) -> dict | None: ...
     def actualizar(self, referencia: str, datos: dict, ahora: int) -> dict: ...
+    def listar(self, tipo: str, identificador: int, administrador=False) -> list[dict]: ...
+
+
+class ConsultaPagosModel:
+    def __init__(self, pedidos: Pedidos):
+        self._pedidos = pedidos
+
+    def historial(self, sesion: dict) -> list[dict]:
+        return self._pedidos.listar(sesion["tipo"], sesion["id"], sesion["tipo"] == "administrador")
+
+    @staticmethod
+    def _propio(pedido, sesion):
+        return (pedido["propietario_tipo"], pedido["propietario_id"]) == (sesion["tipo"], sesion["id"])
+
+    def obtener_visible(self, referencia: str, sesion: dict) -> dict:
+        pedido = self._pedidos.obtener(referencia)
+        if pedido is None or (sesion["tipo"] != "administrador" and not self._propio(pedido, sesion)):
+            raise LookupError("Pedido no encontrado.")
+        return {**pedido, "lineas": json.loads(pedido["lineas_json"])}
+
+    def lineas_pagadas(self, referencia: str, sesion: dict):
+        pedido = self.obtener_visible(referencia, sesion)
+        if pedido["estado"] != "APPROVED" or not self._propio(pedido, sesion):
+            raise ValueError("El pago debe estar aprobado y pertenecer a tu cuenta.")
+        return pedido["lineas"]
 
 
 class PagosModel:
@@ -50,9 +86,9 @@ class PagosModel:
             "total_centavos": centavos(l.total),
         } for l in resumen.lineas]
         lineas_json = json.dumps(lineas, sort_keys=True, ensure_ascii=False)
-        subtotal = sum(l["total_centavos"] for l in lineas)
-        iva = int((Decimal(subtotal) * Decimal(str(resumen.tasa_iva))).quantize(Decimal("1"), rounding=ROUND_HALF_UP))
-        total = subtotal + iva
+        subtotal = centavos(resumen.subtotal)
+        iva = centavos(resumen.iva)
+        total = centavos(resumen.total)
         if total <= 0 or total > 9_000_000_000_000_000:
             raise ValueError("El total del pedido no es válido.")
         ahora = int(time.time())

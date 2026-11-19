@@ -22,9 +22,9 @@ def pagina_estado(request, texto, token=None, status=200):
                                       headers={"Cache-Control": "no-store", "Referrer-Policy": "no-referrer"})
 
 
-def registrar(request, tipo, nombre, correo, contrasena, documento):
+def registrar(request, tipo, nombre, correo, contrasena, documento, **contacto):
     try:
-        registro_verificado.solicitar(tipo, nombre, correo, contrasena, documento)
+        registro_verificado.solicitar(tipo, nombre, correo, contrasena, documento, **contacto)
     except ValueError as error:
         return pagina_estado(request, str(error), status=400)
     except CorreoNoDisponible as error:
@@ -34,14 +34,14 @@ def registrar(request, tipo, nombre, correo, contrasena, documento):
 
 @router.post("/registro/persona")
 def registrar_persona(request: Request, cedula: str = Form(...), usuario: str = Form(...),
-                      correo: str = Form(...), contrasena: str = Form(...)):
-    return registrar(request, "persona", usuario, correo, contrasena, cedula)
+                      correo: str = Form(...), contrasena: str = Form(...), telefono: str = Form("")):
+    return registrar(request, "persona", usuario, correo, contrasena, cedula, telefono=telefono)
 
 
 @router.post("/registro/empresa")
 def registrar_empresa(request: Request, nombre_empresa: str = Form(...), nit: str = Form(...),
-                      correo: str = Form(...), contrasena: str = Form(...)):
-    return registrar(request, "empresa", nombre_empresa, correo, contrasena, nit)
+                      correo: str = Form(...), contrasena: str = Form(...), direccion: str = Form("")):
+    return registrar(request, "empresa", nombre_empresa, correo, contrasena, nit, direccion=direccion)
 
 
 @router.get("/verificar-correo")

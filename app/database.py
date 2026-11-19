@@ -1,15 +1,64 @@
 from __future__ import annotations
 
-from contextlib import contextmanager
-import sqlite3
 import os
+import sqlite3
 import threading
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Optional
+
+import psycopg
+from psycopg.rows import dict_row
+from psycopg_pool import ConnectionPool
 
 BASE_DIR = Path(__file__).resolve().parent
 DB_PATH = Path(os.environ.get("MSPS_DB_PATH", str(BASE_DIR / "msps.db")))
 SCHEMA_PATH = BASE_DIR / "schema.sql"
+ESQUEMA_POSTGRES = BASE_DIR / "schema_postgres.sql"
+
+
+ERRORES_INTEGRIDAD = (sqlite3.IntegrityError, psycopg.IntegrityError)
+ERRORES_CONEXION = (sqlite3.Error, psycopg.Error)
+_pool = None
+_pool_lock = threading.Lock()
+
+
+def motor() -> str:
+    elegido = os.environ.get("MSPS_DB_ENGINE", "sqlite").strip().lower()
+    if elegido not in {"sqlite", "postgresql"}:
+        raise ValueError("MSPS_DB_ENGINE debe ser sqlite o postgresql.")
+    return elegido
+
+
+def _pool_postgres() -> ConnectionPool:
+    global _pool
+    with _pool_lock:
+        if _pool is None:
+            for nombre in ("PGHOST", "PGDATABASE", "PGUSER", "PGPASSWORD"):
+                if not os.environ.get(nombre):
+                    raise RuntimeError(f"Falta configurar {nombre} en la aplicación.")
+            if os.environ.get("WEBSITE_SITE_NAME"):
+                if os.getenv("PGSSLMODE") != "verify-full" or not os.getenv("PGSSLROOTCERT"):
+                    raise RuntimeError("En Azure configura PGSSLMODE=verify-full y PGSSLROOTCERT.")
+            pool = ConnectionPool(
+                open=False, min_size=0, max_size=5, timeout=12,
+                kwargs={"row_factory": dict_row, "connect_timeout": 5},
+                check=ConnectionPool.check_connection,
+            )
+            pool.open()
+            _pool = pool
+        return _pool
+
+
+class _SesionPostgres:
+    def __init__(self, conexion):
+        self._conexion = conexion
+
+    def execute(self, consulta, valores=()):
+        # Las consultas de la aplicación usan ? exclusivamente para parámetros.
+        if valores:
+            return self._conexion.execute(consulta.replace("?", "%s"), valores)
+        return self._conexion.execute(consulta)
 
 
 class Database:
@@ -43,7 +92,9 @@ def abrir_conexion() -> sqlite3.Connection:
 
 
 def get_connection() -> sqlite3.Connection:
-    """Punto único de acceso a la conexión (Singleton)."""
+    """Compatibilidad con herramientas SQLite. El modelo usa transaccion()."""
+    if motor() != "sqlite":
+        raise RuntimeError("Para PostgreSQL usa el contexto transaccion().")
     return Database().connection
 
 
@@ -97,9 +148,23 @@ def _migrar_esquema_anterior(conn: sqlite3.Connection) -> None:
 
 
 def init_db() -> None:
-    """Crea las tablas si no existen (schema.sql) y, si encuentra una
-    base con el esquema anterior, la migra conservando sus datos."""
-    conn = get_connection()
+    """Prepara el esquema del motor elegido y migra las versiones antiguas de SQLite."""
+    if motor() == "postgresql":
+        if os.getenv("WEBSITE_SITE_NAME") and len(os.getenv("MSPS_SECRET_KEY", "")) < 32:
+            raise RuntimeError("Configura MSPS_SECRET_KEY con una clave fija de al menos 32 caracteres.")
+        with transaccion(serializar="esquema") as db:
+            db.execute(ESQUEMA_POSTGRES.read_text(encoding="utf-8"))
+            for rol in ("empresa", "administrador", "persona_natural"):
+                db.execute(
+                    "INSERT INTO roles(nombre) SELECT CAST(? AS text) WHERE NOT EXISTS "
+                    "(SELECT 1 FROM roles WHERE nombre = ?)", (rol, rol),
+                )
+        return
+    preparar_esquema_sqlite(get_connection())
+
+
+def preparar_esquema_sqlite(conn: sqlite3.Connection) -> None:
+    """Aplica el esquema y los cambios históricos a la conexión SQLite indicada."""
     _migrar_esquema_anterior(conn)
     with open(SCHEMA_PATH, "r", encoding="utf-8") as archivo:
         conn.executescript(archivo.read())
@@ -111,17 +176,21 @@ def init_db() -> None:
     conn.commit()
 
 
-
-
 @contextmanager
-def transaccion():
-    """Conexión independiente para cada operación de cotización o afiliación."""
+def transaccion(*, serializar: str | None = None):
+    """Confirma al salir correctamente y revierte la operación completa si falla."""
+    if motor() == "postgresql":
+        with _pool_postgres().connection() as conexion:
+            db = _SesionPostgres(conexion)
+            if serializar:
+                db.execute("SELECT pg_advisory_xact_lock(72654, hashtext(?))", (serializar,))
+            yield db
+        return
     conn = abrir_conexion()
     try:
-        conn.execute("PRAGMA foreign_keys = ON")
         with conn:
+            if serializar:
+                conn.execute("BEGIN IMMEDIATE")
             yield conn
     finally:
         conn.close()
-
-

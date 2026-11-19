@@ -1,5 +1,5 @@
 
-<div class="auth-panel" data-auth-panel="login"{% if not registro_ok and request.query_params.get("acceso") != "login" %} hidden{% endif %}>
+<div class="auth-panel" data-auth-panel="login"{% if not registro_ok and panel_acceso != "login" %} hidden{% endif %}>
     <button type="button" class="auth-panel__close" data-auth-close aria-label="Cerrar">&times;</button>
 
     <h3 class="auth-panel__title">Iniciar Sesión:</h3>

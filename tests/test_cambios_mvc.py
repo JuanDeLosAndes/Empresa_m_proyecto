@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 import pytest
 from fastapi.testclient import TestClient
 from app import create_app, database
@@ -18,11 +20,16 @@ def cuenta(sitio, nombre, empresa=False):
     datos = {"correo": nombre + "@example.org", "contrasena": "ClaveDePrueba"}
     if empresa:
         ruta = "/registro/empresa"
-        datos.update(nombre_empresa=nombre, nit=nombre)
+        datos.update(nombre_empresa=nombre, nit={"Alquileres": "900123456", "Equipos": "900123457"}[nombre])
     else:
         ruta = "/registro/persona"
         datos.update(usuario=nombre, cedula=nombre)
-    assert cliente.post(ruta, data=datos, follow_redirects=False).headers["location"] == "/?registro=ok"
+    with patch("app.models.registro_verificado.enviar_verificacion") as enviar:
+        assert cliente.post(ruta, data=datos).status_code == 200
+    correo, token = enviar.call_args.args
+    assert correo == datos["correo"].lower()
+    respuesta = cliente.post("/verificar-correo", data={"token": token}, follow_redirects=False)
+    assert respuesta.headers["location"] == "/?registro=ok"
     assert cliente.post("/login", data={"identificador": datos["correo"], "contrasena": datos["contrasena"]},
                         follow_redirects=False).headers["location"] == "/?login=ok"
     return cliente

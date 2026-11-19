@@ -8,7 +8,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Optional
 
-from app.database import get_connection
+from app.database import transaccion
 
 
 @dataclass
@@ -46,32 +46,29 @@ class FacturaEmpresaModel:
         id_alquiler: int,
         id_empresa: int,
     ) -> FacturaEmpresa:
-        conn = get_connection()
-        cursor = conn.execute(
-            """INSERT INTO facturas_empresa
-                   (nit, correo, metodo_pago, costo, id_alquiler, id_empresa)
-               VALUES (?, ?, ?, ?, ?, ?)""",
-            (nit, correo, metodo_pago, costo, id_alquiler, id_empresa),
-        )
-        conn.commit()
-        factura = FacturaEmpresaModel.obtener_por_id(cursor.lastrowid)
-        assert factura is not None
-        return factura
+        with transaccion() as conn:
+            cursor = conn.execute(
+                """INSERT INTO facturas_empresa
+                       (nit, correo, metodo_pago, costo, id_alquiler, id_empresa)
+                   VALUES (?, ?, ?, ?, ?, ?) RETURNING *""",
+                (nit, correo, metodo_pago, costo, id_alquiler, id_empresa),
+            )
+            return FacturaEmpresa._from_row(cursor.fetchone())
 
     @staticmethod
     def obtener_por_id(id_factura_empresa: int) -> Optional[FacturaEmpresa]:
-        conn = get_connection()
-        fila = conn.execute(
-            "SELECT * FROM facturas_empresa WHERE id_factura_empresa = ?",
-            (id_factura_empresa,),
-        ).fetchone()
-        return FacturaEmpresa._from_row(fila) if fila else None
+        with transaccion() as conn:
+            fila = conn.execute(
+                "SELECT * FROM facturas_empresa WHERE id_factura_empresa = ?",
+                (id_factura_empresa,),
+            ).fetchone()
+            return FacturaEmpresa._from_row(fila) if fila else None
 
     @staticmethod
     def listar_por_empresa(id_empresa: int) -> list[FacturaEmpresa]:
-        conn = get_connection()
-        filas = conn.execute(
-            "SELECT * FROM facturas_empresa WHERE id_empresa = ? ORDER BY fecha DESC",
-            (id_empresa,),
-        ).fetchall()
-        return [FacturaEmpresa._from_row(f) for f in filas]
+        with transaccion() as conn:
+            filas = conn.execute(
+                "SELECT * FROM facturas_empresa WHERE id_empresa = ? ORDER BY fecha DESC",
+                (id_empresa,),
+            ).fetchall()
+            return [FacturaEmpresa._from_row(f) for f in filas]

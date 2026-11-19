@@ -32,6 +32,7 @@ class SesionActual(TypedDict):
     tipo: str  # 'persona_natural' | 'administrador' | 'empresa'
     id: int
     nombre: str
+    correo: str | None
 
 
 def obtener_sesion_actual(request: Request) -> Optional[SesionActual]:
@@ -44,12 +45,12 @@ def obtener_sesion_actual(request: Request) -> Optional[SesionActual]:
         empresa = EmpresaModel.obtener_por_id(id_)
         if not empresa:
             return None
-        return {"tipo": "empresa", "id": empresa.id_empresa, "nombre": empresa.nombre}
+        return {"tipo": "empresa", "id": empresa.id_empresa, "nombre": empresa.nombre, "correo": empresa.correo}
 
     usuario = UsuarioModel.obtener_por_id(id_)
     if not usuario or usuario.rol != tipo:
         return None
-    return {"tipo": usuario.rol, "id": usuario.id_usuario, "nombre": usuario.nombre}
+    return {"tipo": usuario.rol, "id": usuario.id_usuario, "nombre": usuario.nombre, "correo": usuario.correo}
 
 # ======================================================================
 # CÓMO LO HACE (en concreto)

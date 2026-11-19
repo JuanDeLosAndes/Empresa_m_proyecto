@@ -5,7 +5,6 @@ import functools
 import logging
 import math
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
 from typing import Optional
 
 import gridfs
@@ -13,6 +12,7 @@ from gridfs.errors import FileExists, GridFSError, NoFile
 from pymongo.database import Database
 from pymongo.errors import DuplicateKeyError, PyMongoError
 
+from app.documentos.imagen import ImagenBinaria
 from app.documentos.store import ejecutar_mongo
 
 logger = logging.getLogger(__name__)
@@ -23,13 +23,6 @@ def _limite_mongo(metodo):
     def envoltura(self, *args, **kwargs):
         return ejecutar_mongo(lambda: metodo(self, *args, **kwargs))
     return envoltura
-
-
-@dataclass(frozen=True)
-class ImagenBinaria:
-    contenido: bytes
-    tipo_contenido: str
-    sha256: str
 
 
 class ImagenesLector(ABC):

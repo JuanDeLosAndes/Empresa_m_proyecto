@@ -1,14 +1,14 @@
 
 from fastapi import APIRouter, HTTPException, Request, Response
 
-from app.factories import crear_imagenes_repositorio
+from app.factories import crear_galeria_maquina
 
 router = APIRouter()
 
 
 @router.get("/media/maquinas/{archivo:path}", name="imagen_maquina")
 def imagen_maquina(archivo: str, request: Request) -> Response:
-    imagen = crear_imagenes_repositorio().obtener(archivo)
+    imagen = crear_galeria_maquina().imagen(archivo)
     if imagen is None:
         raise HTTPException(status_code=404, detail="Imagen no encontrada")
 

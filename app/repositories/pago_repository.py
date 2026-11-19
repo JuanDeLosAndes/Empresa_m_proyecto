@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 from app.database import transaccion
+from app.models.pagos import acepta_actualizacion
 
 
-class PagoRepositorioSQLite:
+class PagoRepositorioSQL:
     def crear_o_reutilizar(self, pedido: dict) -> dict:
-        with transaccion() as db:
-            db.execute("BEGIN IMMEDIATE")
+        with transaccion(serializar="pagos") as db:
             anterior = db.execute(
                 """SELECT * FROM pedidos_pago WHERE propietario_tipo = ? AND propietario_id = ?
                    AND ambiente = ? AND huella = ? AND estado = 'PENDING' AND vence > ?
@@ -37,20 +37,14 @@ class PagoRepositorioSQLite:
             return [dict(f) for f in filas]
 
     def actualizar(self, referencia: str, datos: dict, ahora: int) -> dict:
-        with transaccion() as db:
-            db.execute("BEGIN IMMEDIATE")
+        with transaccion(serializar="pagos") as db:
             fila = db.execute("SELECT * FROM pedidos_pago WHERE referencia = ?", (referencia,)).fetchone()
             if not fila:
                 raise LookupError("Pedido no encontrado.")
             pedido = dict(fila)
-            if pedido["transaccion_id"] and pedido["transaccion_id"] != datos["id"]:
-                raise ValueError("La referencia ya está asociada a otra transacción.")
+            if not acepta_actualizacion(pedido, datos):
+                return pedido
             estado = datos["status"]
-            # Un evento atrasado no puede deshacer un pago aprobado o anulado.
-            if pedido["estado"] == "VOIDED" or (pedido["estado"] == "APPROVED" and estado != "VOIDED"):
-                return pedido
-            if pedido["estado"] in {"DECLINED", "ERROR"} and estado == "PENDING":
-                return pedido
             db.execute(
                 """UPDATE pedidos_pago SET estado = ?, transaccion_id = ?, metodo_pago = ?, actualizada = ?,
                    pagada = CASE WHEN ? = 'APPROVED' THEN COALESCE(pagada, ?) ELSE pagada END

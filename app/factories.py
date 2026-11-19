@@ -2,10 +2,13 @@ from __future__ import annotations
 
 import os
 import threading
-from typing import Literal, Optional, TypedDict
+from typing import Optional
 
 from fastapi import Request
 
+from app.models.pagos import ConsultaPagosModel, PagosModel
+from app.pagos.wompi import ConfiguracionWompi, Wompi
+from app.repositories.pago_repository import PagoRepositorioSQL
 from app.documentos.store import get_mongo_database
 from app.models.carrito import CarritoModel
 from app.models.maquinaria import MaquinariaModel
@@ -24,7 +27,6 @@ from app.repositories.imagen_proxy_repository import (
 )
 from app.repositories.maquina_documentos_repository import MaquinaDocumentosMongo
 
-TipoRegistro = Literal["persona_natural", "empresa"]
 
 # El Proxy debe ser UNO por proceso: si se creara uno nuevo en cada petición, su caché
 # nacería vacía y nunca serviría de nada.
@@ -42,7 +44,7 @@ def crear_carrito_repositorio(request: Request) -> CarritoRepositorioBase:
     datos ligado al usuario), esta es la única función que cambia;
     ningún controlador necesita tocarse.
     """
-    return CarritoRepositorioSesion(request)
+    return CarritoRepositorioSesion(request.session)
 
 
 def crear_carrito(request: Request) -> CarritoModel:
@@ -101,48 +103,9 @@ def crear_candado_repositorio() -> CandadoMongo:
     return CandadoMongo(get_mongo_database())
 
 
-class CampoFormulario(TypedDict):
-    name: str
-    label: str
-    type: str
-    placeholder: str
+def crear_consulta_pagos() -> ConsultaPagosModel:
+    return ConsultaPagosModel(PagoRepositorioSQL())
 
 
-class AuthFormFactory:
-    """Crea las listas de campos para los formularios de login y registro."""
-
-    @staticmethod
-    def build_login_fields() -> list[CampoFormulario]:
-        return [
-            {
-                "name": "identificador",
-                "label": "Usuario",
-                "type": "text",
-                "placeholder": "Usuario, correo o cédula/NIT",
-            },
-            {"name": "contrasena", "label": "Contraseña", "type": "password", "placeholder": "Contraseña"},
-        ]
-
-    @staticmethod
-    def build_register_fields(tipo: TipoRegistro) -> list[CampoFormulario]:
-        if tipo == "persona_natural":
-            return [
-                {"name": "cedula", "label": "Cédula", "type": "text", "placeholder": "Cédula"},
-                {"name": "usuario", "label": "Usuario", "type": "text", "placeholder": "Usuario"},
-                {"name": "correo", "label": "Correo electrónico", "type": "email", "placeholder": "Correo electrónico"},
-                {"name": "contrasena", "label": "Contraseña", "type": "password", "placeholder": "Contraseña"},
-            ]
-        if tipo == "empresa":
-            return [
-                {"name": "nombre_empresa", "label": "Nombre de la Empresa", "type": "text", "placeholder": "Nombre de la Empresa"},
-                {"name": "nit", "label": "NIT", "type": "text", "placeholder": "NIT"},
-                {"name": "correo", "label": "Correo electrónico", "type": "email", "placeholder": "Correo electrónico"},
-                {"name": "contrasena", "label": "Contraseña", "type": "password", "placeholder": "Contraseña"},
-            ]
-        raise ValueError(f"Tipo de registro no soportado: {tipo}")
-
-
-
-
-
-
+def crear_pagos() -> PagosModel:
+    return PagosModel(PagoRepositorioSQL(), Wompi(ConfiguracionWompi.desde_entorno()))

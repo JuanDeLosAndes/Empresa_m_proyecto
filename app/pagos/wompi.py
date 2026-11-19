@@ -9,6 +9,8 @@ from urllib.parse import urlencode, urlsplit
 
 import httpx
 
+from app.database import motor
+
 
 class PagosNoConfigurados(RuntimeError):
     pass
@@ -42,8 +44,9 @@ class ConfiguracionWompi:
         url = urlsplit(base)
         if (url.scheme != "https" or not url.netloc or url.path or url.query or url.fragment or url.username):
             raise PagosNoConfigurados("PUBLIC_BASE_URL debe contener el dominio HTTPS de la aplicación.")
-        if ambiente == "prod" and (not os.getenv("MSPS_DB_PATH") or len(os.getenv("MSPS_SECRET_KEY", "")) < 32):
-            raise PagosNoConfigurados("Antes de cobrar, configura MSPS_DB_PATH persistente y MSPS_SECRET_KEY fija.")
+        persistente = motor() == "postgresql" or bool(os.getenv("MSPS_DB_PATH"))
+        if ambiente == "prod" and (not persistente or len(os.getenv("MSPS_SECRET_KEY", "")) < 32):
+            raise PagosNoConfigurados("Antes de cobrar, configura una base persistente y MSPS_SECRET_KEY fija.")
         return cls(ambiente, *claves, base)
 
 

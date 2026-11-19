@@ -1,11 +1,10 @@
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 from typing import Optional
 
-from app.database import get_connection, transaccion
-import math
-import sqlite3
+from app.database import ERRORES_INTEGRIDAD, transaccion
 
 
 @dataclass
@@ -20,6 +19,14 @@ class Maquinaria:
     id_categoria: int
     nombre_categoria: Optional[str] = None
     disponible: bool = True
+
+    @property
+    def tiene_tarifa(self) -> bool:
+        return self.costo_por_hora > 0
+
+    @property
+    def permite_alquiler_directo(self) -> bool:
+        return self.disponible and self.tiene_tarifa
 
     @staticmethod
     def _from_row(row) -> "Maquinaria":
@@ -47,23 +54,23 @@ _SELECT_CON_CATEGORIA = """
 class MaquinariaModel:
     @staticmethod
     def listar(categoria: Optional[str] = None) -> list[Maquinaria]:
-        conn = get_connection()
-        if categoria:
-            filas = conn.execute(
-                _SELECT_CON_CATEGORIA + " WHERE m.eliminada = 0 AND c.nombre_categoria = ? ORDER BY m.marca",
-                (categoria,),
-            ).fetchall()
-        else:
-            filas = conn.execute(_SELECT_CON_CATEGORIA + " WHERE m.eliminada = 0 ORDER BY m.marca").fetchall()
-        return [Maquinaria._from_row(f) for f in filas]
+        with transaccion() as conn:
+            if categoria:
+                filas = conn.execute(
+                    _SELECT_CON_CATEGORIA + " WHERE m.eliminada = 0 AND c.nombre_categoria = ? ORDER BY m.marca",
+                    (categoria,),
+                ).fetchall()
+            else:
+                filas = conn.execute(_SELECT_CON_CATEGORIA + " WHERE m.eliminada = 0 ORDER BY m.marca").fetchall()
+            return [Maquinaria._from_row(f) for f in filas]
 
     @staticmethod
     def obtener_por_id(id_maquinaria: int) -> Optional[Maquinaria]:
-        conn = get_connection()
-        fila = conn.execute(
-            _SELECT_CON_CATEGORIA + " WHERE m.eliminada = 0 AND m.id_maquinaria = ?", (id_maquinaria,)
-        ).fetchone()
-        return Maquinaria._from_row(fila) if fila else None
+        with transaccion() as conn:
+            fila = conn.execute(
+                _SELECT_CON_CATEGORIA + " WHERE m.eliminada = 0 AND m.id_maquinaria = ?", (id_maquinaria,)
+            ).fetchone()
+            return Maquinaria._from_row(fila) if fila else None
 
     @staticmethod
     def crear(
@@ -84,12 +91,13 @@ class MaquinariaModel:
                 cursor = conn.execute(
                     """INSERT INTO maquinarias
                        (marca, descripcion, capacidad, modelo, costo_por_hora, placa, id_categoria, disponible)
-                       VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
-                    (marca, descripcion, capacidad, modelo, costo_por_hora, placa, id_categoria, disponible),
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING id_maquinaria""",
+                    (marca, descripcion, capacidad, modelo, costo_por_hora, placa, id_categoria, int(disponible)),
                 )
-            except sqlite3.IntegrityError as error:
+            except ERRORES_INTEGRIDAD as error:
                 raise ValueError("Ya existe una máquina con esa placa") from error
-            fila = conn.execute(_SELECT_CON_CATEGORIA + " WHERE m.eliminada = 0 AND m.id_maquinaria = ?", (cursor.lastrowid,)).fetchone()
+            id_maquinaria = cursor.fetchone()["id_maquinaria"]
+            fila = conn.execute(_SELECT_CON_CATEGORIA + " WHERE m.id_maquinaria = ?", (id_maquinaria,)).fetchone()
             return Maquinaria._from_row(fila)
 
     @staticmethod
@@ -100,7 +108,7 @@ class MaquinariaModel:
             resultado = conn.execute(
                 """UPDATE maquinarias SET costo_por_hora = ?, capacidad = ?, descripcion = ?, disponible = ?
                    WHERE id_maquinaria = ? AND eliminada = 0""",
-                (costo_por_hora, capacidad, descripcion, disponible, id_maquinaria),
+                (costo_por_hora, capacidad, descripcion, int(disponible), id_maquinaria),
             )
             if not resultado.rowcount:
                 raise LookupError("Máquina no encontrada")

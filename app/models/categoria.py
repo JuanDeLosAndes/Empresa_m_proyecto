@@ -4,7 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Optional
 
-from app.database import get_connection
+from app.database import transaccion
 
 
 @dataclass
@@ -23,33 +23,32 @@ class Categoria:
 class CategoriaModel:
     @staticmethod
     def listar() -> list[Categoria]:
-        conn = get_connection()
-        filas = conn.execute(
-            "SELECT * FROM categorias ORDER BY nombre_categoria"
-        ).fetchall()
-        return [Categoria._from_row(f) for f in filas]
+        with transaccion() as conn:
+            filas = conn.execute(
+                "SELECT * FROM categorias ORDER BY nombre_categoria"
+            ).fetchall()
+            return [Categoria._from_row(f) for f in filas]
 
     @staticmethod
     def obtener_por_id(id_categoria: int) -> Optional[Categoria]:
-        conn = get_connection()
-        fila = conn.execute(
-            "SELECT * FROM categorias WHERE id_categoria = ?", (id_categoria,)
-        ).fetchone()
-        return Categoria._from_row(fila) if fila else None
+        with transaccion() as conn:
+            fila = conn.execute(
+                "SELECT * FROM categorias WHERE id_categoria = ?", (id_categoria,)
+            ).fetchone()
+            return Categoria._from_row(fila) if fila else None
 
     @staticmethod
     def obtener_por_nombre(nombre_categoria: str) -> Optional[Categoria]:
-        conn = get_connection()
-        fila = conn.execute(
-            "SELECT * FROM categorias WHERE nombre_categoria = ?", (nombre_categoria,)
-        ).fetchone()
-        return Categoria._from_row(fila) if fila else None
+        with transaccion() as conn:
+            fila = conn.execute(
+                "SELECT * FROM categorias WHERE nombre_categoria = ?", (nombre_categoria,)
+            ).fetchone()
+            return Categoria._from_row(fila) if fila else None
 
     @staticmethod
     def crear(nombre_categoria: str) -> Categoria:
-        conn = get_connection()
-        cursor = conn.execute(
-            "INSERT INTO categorias (nombre_categoria) VALUES (?)", (nombre_categoria,)
-        )
-        conn.commit()
-        return Categoria(id_categoria=cursor.lastrowid, nombre_categoria=nombre_categoria)
+        with transaccion() as conn:
+            cursor = conn.execute(
+                "INSERT INTO categorias (nombre_categoria) VALUES (?) RETURNING *", (nombre_categoria,)
+            )
+            return Categoria._from_row(cursor.fetchone())

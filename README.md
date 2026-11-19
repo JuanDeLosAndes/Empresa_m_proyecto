@@ -1,50 +1,38 @@
 # Empresa_m_proyecto
 
-## Base de datos no relacional (MongoDB)
+## Persistencia de MSPS
 
-Las fichas técnicas y las **fotos** de las máquinas viven en MongoDB:
-
-| Qué | Dónde en MongoDB |
+| Información | Almacenamiento |
 |---|---|
-| Ficha técnica + referencias a imágenes (un documento por máquina) | colección `maquinas` |
-| Bytes de cada foto (GridFS) | colecciones `fs.files` y `fs.chunks` |
+| Cuentas, empresas, catálogo, afiliaciones, cotizaciones, alquileres, facturas y pedidos de pago | PostgreSQL en Azure o SQLite local |
+| Fichas técnicas y referencias a imágenes por placa | MongoDB Atlas, colección `maquinas` |
+| Archivos de fotos | MongoDB GridFS, colecciones `fs.files` y `fs.chunks` |
+| Selección actual de máquinas y horas del carrito | Sesión firmada del navegador |
 
-Las filas transaccionales (usuarios, carrito, alquileres) siguen en SQLite. Ambos
-motores se enlazan por la **placa** de la máquina. El sitio sirve las fotos desde
-`/media/maquinas/<slug>/<NN>.jpg`, leyéndolas de MongoDB.
+La aplicación crea las 14 tablas al arrancar. Los esquemas están en `app/schema.sql` y `app/schema_postgres.sql`.
+En una PostgreSQL nueva, la carga inicial añade las máquinas predefinidas. Si se ha importado un catálogo antes del primer arranque, no agrega máquinas predefinidas adicionales. El administrador sube sus fotos desde la web.
+El modelo enlaza cada fila de maquinaria con su documento MongoDB mediante la placa.
 
-### Configuración
+### Ejecutar y comprobar
 
-Copia `.env.example` a `.env` (o define las variables de entorno, por ejemplo en
-*Configuración → Variables de entorno* de Azure App Service):
+1. Instala Python 3.12 y las dependencias con `python -m pip install -r requirements.txt`.
+2. Usa `.env.servicios.example` y `.env.correo.example` como referencia para las variables de tu entorno.
+3. En desarrollo, ejecuta `python -m uvicorn main:app --reload`. SQLite toma la ruta de `MSPS_DB_PATH`.
+4. En Azure configura `MSPS_DB_ENGINE=postgresql`, los valores `PG*` del ejemplo, una clave de sesión fija y la contraseña inicial del administrador. El comando de inicio es `sh startup.sh`.
+5. Entra como administrador y abre `/admin/diagnostico` para ver el motor activo, las tablas y campos presentes y la conexión con MongoDB.
 
-```
-MONGODB_URI=mongodb://localhost:27017        # o mongodb+srv://usuario:clave@cluster.mongodb.net
-MONGODB_DB=msps
-```
+La herramienta `python -m tools.preparar_postgres_azure` prepara la base `msps` y el usuario `msps_app` en un servidor PostgreSQL ya creado. Para conservar **solo categorías y máquinas** de SQLite, crea primero las tablas con `MSPS_DB_ENGINE=postgresql python -c 'from app.database import init_db; init_db()'` y ejecuta `MSPS_DB_ENGINE=postgresql python -m tools.importar_sqlite_a_postgres --solo-catalogo RUTA_SQLITE`. Las fotos permanecen en MongoDB Atlas y se vinculan por placa. Este modo no traslada usuarios, empresas, facturas ni pedidos: al arrancar, la aplicación crea el administrador con `MSPS_ADMIN_PASSWORD`. Para un traslado completo a una PostgreSQL sin tablas MSPS todavía existe `python -m tools.importar_sqlite_a_postgres RUTA_SQLITE`.
 
-MongoDB local con Docker: `docker run -d --name msps-mongo -p 27017:27017 mongo:7`
+### Organización MVC
 
-Con MongoDB Atlas (gratis, 512 MB) basta pegar su cadena de conexión en `MONGODB_URI`
-y permitir en Atlas la IP del servidor (*Network Access*). Las 22 fotos pesan ~6 MB.
-
-Al arrancar, la app sube sola el catálogo y las fotos de `app/seed_data/imagenes_maquinas/`
-(solo lo que falte o haya cambiado). Si MongoDB no responde, el sitio sigue funcionando
-sin galería ni ficha y el motivo queda en el log.
-
-### Agregar máquinas nuevas
-
-1. Poner los datos en `app/catalogo_maquinas.py`.
-2. `python -m tools.importar_imagenes --origen "carpeta/con/las/fotos"` (redimensiona y quita el GPS).
-3. Reiniciar la app.
+- Los controladores de `app/controllers/` reciben formularios, aplican las dependencias de sesión y traducen los resultados del modelo a HTML o JSON.
+- Los modelos de `app/models/` definen los importes, la disponibilidad, la afiliación, la propiedad de los pedidos y las transiciones de pago. Los modelos relacionales sencillos encapsulan sus consultas. Los repositorios de `app/repositories/` guardan y recuperan los pedidos, el carrito de sesión y los documentos.
+- Las vistas de `app/templates/` presentan los resultados. El CSS y los eventos del navegador de la ficha de maquinaria están en `app/static/`. Los campos de formulario se definen en `app/formularios.py`.
+- Al cambiar las horas, la ficha llama a `GET /api/maquinas/{id}/estimacion`. El controlador consulta `CarritoModel` y la vista muestra el importe de la línea. El checkout usa el mismo modelo para el subtotal, el IVA y el total.
 
 ### Pruebas
 
-```
-pip install pytest mongomock
-pytest                                  
-MSPS_TEST_MONGO_URI=mongodb://localhost:27017 pytest  
-```
+Instala las dependencias de pruebas con `python -m pip install pytest mongomock` y ejecuta `python -m pytest -q`. La suite usa SQLite temporal y MongoDB simulado. Para incluir PostgreSQL, indica las variables `PG*` de una base desechable cuyo nombre termine en `_test`, concede al usuario de prueba permiso para crear esquemas en esa base y define `MSPS_TEST_POSTGRES=1`. Los avisos y consultas de Wompi se prueban con respuestas simuladas.
 
 ### Patrones y principios
 

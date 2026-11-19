@@ -69,16 +69,20 @@ class CarritoModel:
     def contar(self) -> int:
         return len(self.resumen().lineas)
 
-    def agregar(self, id_maquinaria: int, horas: int) -> None:
+    def estimar(self, id_maquinaria: int, horas: int) -> LineaCarrito:
         maquina = self._maquinas.obtener_por_id(id_maquinaria)
         if maquina is None:
             raise MaquinaNoEncontrada(id_maquinaria)
         if not maquina.disponible:
             raise MaquinaNoDisponible("Esta máquina no está disponible")
-        if (maquina.costo_por_hora or 0) <= 0:
+        if not maquina.tiene_tarifa:
             raise RequiereCotizacion("Esta máquina requiere cotización")
-        items = self._repositorio.leer()
+        return LineaCarrito(maquina, horas)
+
+    def agregar(self, id_maquinaria: int, horas: int) -> None:
         nuevo = CarritoItem(id_maquinaria, horas)
+        self.estimar(id_maquinaria, nuevo.horas)
+        items = self._repositorio.leer()
         for pos, item in enumerate(items):
             if item.id_maquinaria == id_maquinaria:
                 items[pos] = nuevo
@@ -102,7 +106,7 @@ class CarritoModel:
         lineas = []
         for item in self._repositorio.leer():
             maquina = self._maquinas.obtener_por_id(item.id_maquinaria)
-            if maquina and maquina.disponible and (maquina.costo_por_hora or 0) > 0:
+            if maquina and maquina.permite_alquiler_directo:
                 lineas.append(LineaCarrito(maquina, item.horas))
         return ResumenCarrito(lineas)
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from app.factories import AuthFormFactory
+from app.formularios import AuthFormFactory
 
 
 class PageContextBuilder:
@@ -84,5 +84,3 @@ class PageContextBuilder:
 
     def build(self) -> dict[str, Any]:
         return self._context
-
-

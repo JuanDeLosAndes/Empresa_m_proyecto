@@ -4,7 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Optional
 
-from app.database import get_connection
+from app.database import transaccion
 
 
 @dataclass
@@ -42,29 +42,26 @@ class FacturaModel:
         iva: float,
         id_alquiler: int,
     ) -> Factura:
-        conn = get_connection()
-        cursor = conn.execute(
-            """INSERT INTO facturas (numero, cedula, metodo_pago, costo, iva, id_alquiler)
-               VALUES (?, ?, ?, ?, ?, ?)""",
-            (numero, cedula, metodo_pago, costo, iva, id_alquiler),
-        )
-        conn.commit()
-        factura = FacturaModel.obtener_por_id(cursor.lastrowid)
-        assert factura is not None
-        return factura
+        with transaccion() as conn:
+            cursor = conn.execute(
+                """INSERT INTO facturas (numero, cedula, metodo_pago, costo, iva, id_alquiler)
+                   VALUES (?, ?, ?, ?, ?, ?) RETURNING *""",
+                (numero, cedula, metodo_pago, costo, iva, id_alquiler),
+            )
+            return Factura._from_row(cursor.fetchone())
 
     @staticmethod
     def obtener_por_id(id_factura: int) -> Optional[Factura]:
-        conn = get_connection()
-        fila = conn.execute(
-            "SELECT * FROM facturas WHERE id_factura = ?", (id_factura,)
-        ).fetchone()
-        return Factura._from_row(fila) if fila else None
+        with transaccion() as conn:
+            fila = conn.execute(
+                "SELECT * FROM facturas WHERE id_factura = ?", (id_factura,)
+            ).fetchone()
+            return Factura._from_row(fila) if fila else None
 
     @staticmethod
     def listar_por_cedula(cedula: str) -> list[Factura]:
-        conn = get_connection()
-        filas = conn.execute(
-            "SELECT * FROM facturas WHERE cedula = ? ORDER BY fecha DESC", (cedula,)
-        ).fetchall()
-        return [Factura._from_row(f) for f in filas]
+        with transaccion() as conn:
+            filas = conn.execute(
+                "SELECT * FROM facturas WHERE cedula = ? ORDER BY fecha DESC", (cedula,)
+            ).fetchall()
+            return [Factura._from_row(f) for f in filas]

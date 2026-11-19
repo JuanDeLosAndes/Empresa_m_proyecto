@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import RedirectResponse
 
 from app.builders import PageContextBuilder
@@ -22,6 +22,17 @@ class ItemId(BaseModel):
 
 class ItemNuevo(ItemId):
     horas: int = Field(default=1, ge=1)
+
+
+@router.get("/api/maquinas/{id_maquinaria}/estimacion")
+def estimar(id_maquinaria: int, request: Request, horas: int = Query(ge=1, le=2_147_483_647)):
+    try:
+        linea = crear_carrito(request).estimar(id_maquinaria, horas)
+    except MaquinaNoEncontrada:
+        raise HTTPException(404, "Máquina no encontrada") from None
+    except (RequiereCotizacion, MaquinaNoDisponible) as error:
+        raise HTTPException(409, str(error)) from None
+    return {"horas": linea.horas, "total_linea": linea.total}
 
 
 @router.get("/api/verificar-login")

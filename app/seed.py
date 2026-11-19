@@ -2,22 +2,17 @@ from __future__ import annotations
 
 import logging
 import os
-import sqlite3
 from dataclasses import replace
 
 from pymongo.errors import PyMongoError
 
 from app.catalogo_maquinas import TARIFAS_COP_POR_HORA, construir_catalogo
-from app.database import get_connection
+from app.database import motor, transaccion
 from app.documentos.store import ejecutar_mongo
 from app.factories import crear_candado_repositorio, crear_maquina_documentos_repositorio
-from app.models.categoria import CategoriaModel
-from app.models.maquinaria import MaquinariaModel
-from app.models.usuario import UsuarioModel
+from app.security import hash_password
 
 logger = logging.getLogger(__name__)
-
-_CATEGORIAS = ["Excavadora", "Retroexcavadora", "Volqueta"]
 
 _MAQUINARIAS = [
     # marca, descripcion, capacidad, modelo, costo_por_hora, placa, categoria
@@ -28,51 +23,40 @@ _MAQUINARIAS = [
 ]
 
 
-def _obtener_o_crear_categoria(nombre: str):
-    categoria = CategoriaModel.obtener_por_nombre(nombre)
-    if categoria is not None:
-        return categoria
-    try:
-        return CategoriaModel.crear(nombre)
-    except sqlite3.IntegrityError:
-        # Otro worker la creó justo antes; se lee la que ya existe.
-        return CategoriaModel.obtener_por_nombre(nombre)
+def _sembrar_maquinas(filas) -> None:
+    """Los reinicios conservan las ediciones, incluso las bajas por placa."""
+    with transaccion(serializar="catalogo") as db:
+        categorias = {
+            fila["nombre_categoria"]: fila["id_categoria"]
+            for fila in db.execute("SELECT id_categoria, nombre_categoria FROM categorias").fetchall()
+        }
+        placas = {fila["placa"] for fila in db.execute("SELECT placa FROM maquinarias").fetchall()}
+        for marca, descripcion, capacidad, modelo, costo, placa, categoria in filas:
+            if placa in placas:
+                continue
+            if categoria not in categorias:
+                fila = db.execute(
+                    "INSERT INTO categorias (nombre_categoria) VALUES (?) RETURNING id_categoria",
+                    (categoria,),
+                ).fetchone()
+                categorias[categoria] = fila["id_categoria"]
+            db.execute(
+                """INSERT INTO maquinarias
+                   (marca, descripcion, capacidad, modelo, costo_por_hora, placa, id_categoria)
+                   VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT (placa) DO NOTHING""",
+                (marca, descripcion, capacidad, modelo, costo, placa, categorias[categoria]),
+            )
+            placas.add(placa)
 
 
-def seed_catalogo_real() -> None:
-    """Carga la flota real en dos motores, enlazados por la placa:
-    - SQL (SQLite): la fila de la máquina (lo transaccional: carrito, alquileres).
-    - MongoDB: el documento con la ficha técnica. Las FOTOS no se siembran: las
-      sube el administrador desde /admin/maquinas.
-
-    Idempotente: no duplica filas SQL ni pisa documentos de MongoDB que ya existen.
-    Si MongoDB no responde, el sitio sigue funcionando (sin galería ni ficha)
-    y se deja el aviso en el log.
-    """
-    conn = get_connection()
-    catalogo = construir_catalogo()  # Director + Builder + Factory de fichas
-
-    for doc in catalogo:
-        categoria = _obtener_o_crear_categoria(doc.categoria)
-        existe = conn.execute(
-            "SELECT 1 FROM maquinarias WHERE placa = ?", (doc.placa,)
-        ).fetchone()
-        if not existe:
-            try:
-                MaquinariaModel.crear(
-                    marca=doc.marca,
-                    descripcion=doc.descripcion,
-                    capacidad=doc.capacidad,
-                    modelo=doc.modelo,
-                    # Sin tarifa definida = 0, y el sitio muestra "Tarifa por cotizar".
-                    costo_por_hora=TARIFAS_COP_POR_HORA.get(doc.placa, 0.0),
-                    placa=doc.placa,
-                    id_categoria=categoria.id_categoria,
-                )
-            except sqlite3.IntegrityError:
-                # Otro worker de gunicorn la insertó justo antes (placa UNIQUE).
-                pass
-
+def seed_catalogo_real(*, sembrar_sql: bool = True) -> None:
+    catalogo = construir_catalogo()
+    if sembrar_sql:
+        _sembrar_maquinas(
+            (doc.marca, doc.descripcion, doc.capacidad, doc.modelo,
+             TARIFAS_COP_POR_HORA.get(doc.placa, 0.0), doc.placa, doc.categoria)
+            for doc in catalogo
+        )
     try:
         _sembrar_mongo(catalogo)
     except PyMongoError as error:
@@ -104,41 +88,23 @@ def _sembrar_mongo(catalogo) -> None:
 
 
 def seed_demo_data() -> None:
-    conn = get_connection()
-
-    for nombre in _CATEGORIAS:
-        if not CategoriaModel.obtener_por_nombre(nombre):
-            CategoriaModel.crear(nombre)
-
-    for marca, descripcion, capacidad, modelo, costo, placa, nombre_categoria in _MAQUINARIAS:
-        existe = conn.execute(
-            "SELECT 1 FROM maquinarias WHERE placa = ?", (placa,)
-        ).fetchone()
-        if existe:
-            continue
-        categoria = CategoriaModel.obtener_por_nombre(nombre_categoria)
-        if not categoria:
-            continue
-        MaquinariaModel.crear(
-            marca=marca,
-            descripcion=descripcion,
-            capacidad=capacidad,
-            modelo=modelo,
-            costo_por_hora=costo,
-            placa=placa,
-            id_categoria=categoria.id_categoria,
-        )
-
-    # Administrador por defecto para poder probar el login con rol
-    # administrador. Se crea solo si no existe ningún administrador
-    # todavía; por seguridad esto NO se expone en ningún formulario
-    # público de registro (ver app/models/usuario.py).
-    hay_admin = conn.execute("SELECT 1 FROM administradores").fetchone()
-    if not hay_admin:
-        UsuarioModel.crear_administrador(
-            nombre="admin",
-            # En producción define MSPS_ADMIN_PASSWORD; el valor por defecto es solo para desarrollo.
-            contrasena=os.environ.get("MSPS_ADMIN_PASSWORD", "admin123"),
-        )
-
-    seed_catalogo_real()
+    # Tras importar un catálogo en PostgreSQL, no volver a crear máquinas
+    # predefinidas que el administrador pudo haber eliminado.
+    with transaccion() as db:
+        catalogo_existente = bool(db.execute("SELECT 1 FROM maquinarias LIMIT 1").fetchone())
+    sembrar_sql = motor() != "postgresql" or not catalogo_existente
+    if sembrar_sql:
+        _sembrar_maquinas(_MAQUINARIAS)
+    with transaccion(serializar="admin_inicial") as db:
+        if not db.execute("SELECT 1 FROM administradores LIMIT 1").fetchone():
+            clave = os.getenv("MSPS_ADMIN_PASSWORD")
+            if motor() == "postgresql" and not clave:
+                raise RuntimeError("Define MSPS_ADMIN_PASSWORD para crear el primer admin de la web.")
+            fila = db.execute(
+                """INSERT INTO usuarios (nombre, contrasena_hash, id_rol)
+                   SELECT ?, ?, id_rol FROM roles WHERE nombre = 'administrador'
+                   RETURNING id_usuario""",
+                ("admin", hash_password(clave or "admin123")),
+            ).fetchone()
+            db.execute("INSERT INTO administradores (id_usuario) VALUES (?)", (fila["id_usuario"],))
+    seed_catalogo_real(sembrar_sql=sembrar_sql)

@@ -1,4 +1,4 @@
-<div class="auth-panel" data-auth-panel="register"{% if request.query_params.get("acceso") != "registro" %} hidden{% endif %}>
+<div class="auth-panel" data-auth-panel="register"{% if panel_acceso != "registro" %} hidden{% endif %}>
     <button type="button" class="auth-panel__close" data-auth-close aria-label="Cerrar">&times;</button>
 
     <div class="auth-panel__view" data-register-view="choice">
@@ -20,7 +20,7 @@
             {% for field in persona_fields %}
             <label class="auth-field">
                 <span class="sr-only">{{ field.label }}</span>
-                <input type="{{ field.type }}" name="{{ field.name }}" placeholder="{{ field.placeholder }}" autocomplete="off" required{% if field.name == 'nit' %} pattern="([0-9]{9}|[0-9]{3}\.[0-9]{3}\.[0-9]{3})(-[0-9])?|[0-9]{10}" title="9 números y un DV opcional. Ejemplo: 900123456-7" maxlength="13"{% endif %}>
+                <input type="{{ field.type }}" name="{{ field.name }}" placeholder="{{ field.placeholder }}" autocomplete="off"{% if field.required|default(true) %} required{% endif %}{% if field.name == 'nit' %} pattern="([0-9]{9}|[0-9]{3}\.[0-9]{3}\.[0-9]{3})(-[0-9])?|[0-9]{10}" title="9 números y un DV opcional. Ejemplo: 900123456-7" maxlength="13"{% endif %}>
             </label>
             {% endfor %}
             <button type="submit" class="auth-field auth-field--submit">Crear cuenta</button>
@@ -39,7 +39,7 @@
             {% for field in empresa_fields %}
             <label class="auth-field">
                 <span class="sr-only">{{ field.label }}</span>
-                <input type="{{ field.type }}" name="{{ field.name }}" placeholder="{{ field.placeholder }}" autocomplete="off" required{% if field.name == 'nit' %} pattern="([0-9]{9}|[0-9]{3}\.[0-9]{3}\.[0-9]{3})(-[0-9])?|[0-9]{10}" title="9 números y un DV opcional. Ejemplo: 900123456-7" maxlength="13"{% endif %}>
+                <input type="{{ field.type }}" name="{{ field.name }}" placeholder="{{ field.placeholder }}" autocomplete="off"{% if field.required|default(true) %} required{% endif %}{% if field.name == 'nit' %} pattern="([0-9]{9}|[0-9]{3}\.[0-9]{3}\.[0-9]{3})(-[0-9])?|[0-9]{10}" title="9 números y un DV opcional. Ejemplo: 900123456-7" maxlength="13"{% endif %}>
             </label>
             {% endfor %}
             <button type="submit" class="auth-field auth-field--submit">Crear cuenta</button>

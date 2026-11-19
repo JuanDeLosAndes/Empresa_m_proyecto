@@ -9,6 +9,7 @@ from pymongo.errors import PyMongoError
 from app.documentos import galeria as g
 from app.documentos.maquina_documento import ImagenMaquina, MaquinaDocumento
 from app.models.maquinaria import Maquinaria
+from app.documentos.imagen import ImagenBinaria
 from app.procesar_imagen import MAX_BYTES, FotoInvalida, procesar_foto
 
 
@@ -30,6 +31,7 @@ class _Documentos(Protocol):
 
 
 class _Imagenes(Protocol):
+    def obtener(self, archivo: str) -> Optional[ImagenBinaria]: ...
     def guardar(self, archivo: str, contenido: bytes, tipo_contenido: str = "image/jpeg") -> bool: ...
     def eliminar(self, archivo: str) -> None: ...
 
@@ -43,6 +45,9 @@ class GaleriaMaquinaModel:
         self._imagenes = imagenes
 
     # ---- consultas -----------------------------------------------------------------
+    def imagen(self, archivo: str) -> Optional[ImagenBinaria]:
+        return self._imagenes.obtener(archivo)
+
     def fotos_por_placa(self) -> dict[str, int]:
         return {d.placa: len(d.imagenes) for d in self._documentos.listar()}
 

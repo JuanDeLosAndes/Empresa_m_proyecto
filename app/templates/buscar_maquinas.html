@@ -50,7 +50,7 @@
                     <div class="maquinas-card-spec">
                         <span class="spec-label">Categoría:</span> {{ maquina.nombre_categoria }}<br>
                         <span class="spec-label">Capacidad:</span> {{ maquina.capacidad or "N/D" }}<br>
-                        <span class="spec-label">Costo por hora:</span> {% if maquina.costo_por_hora %}${{ "{:,.0f}".format(maquina.costo_por_hora) }} COP{% else %}Tarifa por cotizar{% endif %}
+                        <span class="spec-label">Costo por hora:</span> {% if maquina.tiene_tarifa %}${{ "{:,.0f}".format(maquina.costo_por_hora) }} COP{% else %}Tarifa por cotizar{% endif %}
                     </div>
                 </div>
             </div>
