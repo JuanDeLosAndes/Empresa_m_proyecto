@@ -1,15 +1,15 @@
-from pydantic import BaseModel, Field, ConfigDict
+from app.models.ficha_admin import AltaMaquina, EdicionMaquina
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import RedirectResponse
 
-from app.builders import PageContextBuilder
+from app.views.builders import PageContextBuilder
 from app.controllers.dependencias import exigir_admin
-from app.current_user import SesionActual
+from app.controllers.sesion import SesionActual
 from app.factories import crear_galeria_maquina
-from app.mensajes import mensaje_de_fotos
+from app.views.mensajes import mensaje_de_fotos
 from app.models.galeria_maquina import AlmacenNoDisponible, GaleriaMaquinaModel
 from app.models.maquinaria import MaquinariaModel
-from app.templating import templates
+from app.views.templating import templates
 
 router = APIRouter(prefix="/admin")
 
@@ -83,21 +83,6 @@ def eliminar_foto(id_maquinaria: int, archivo: str = Form(...), _: SesionActual 
         return _volver(id_maquinaria, error="mongo")
     return _volver(id_maquinaria, hecho="eliminada")
 
-
-
-class EdicionMaquina(BaseModel):
-    model_config = ConfigDict(str_strip_whitespace=True)
-    costo_por_hora: float = Field(ge=0, allow_inf_nan=False)
-    capacidad: str = Field(default="", max_length=200)
-    descripcion: str = Field(default="", max_length=4000)
-    disponible: bool = True
-
-
-class AltaMaquina(EdicionMaquina):
-    marca: str = Field(min_length=1, max_length=120)
-    modelo: str = Field(default="", max_length=120)
-    placa: str = Field(min_length=1, max_length=50)
-    id_categoria: int = Field(gt=0)
 
 
 @router.post("/maquinas", status_code=201)

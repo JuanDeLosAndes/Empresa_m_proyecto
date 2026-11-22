@@ -1,15 +1,20 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="equipo-panel">
-    <h1>Verificación del correo</h1>
-    <p role="status">{{ texto }}</p>
-    {% if token %}
-    <form method="post" action="/verificar-correo">
-        <input type="hidden" name="token" value="{{ token }}">
-        <button class="equipo-btn" type="submit">Confirmar mi correo</button>
-    </form>
-    {% endif %}
-    <p><a href="/?acceso=login">Iniciar sesión</a></p>
-    <p><a href="/?acceso=registro">Volver al registro o solicitar otro enlace</a></p>
-</div>
+<section class="correo-pagina">
+    <div class="correo-dialogo" aria-labelledby="correo-titulo">
+        <h1 id="correo-titulo">{{ 'Cambiar contraseña' if accion == 'restablecer' else 'Verificación del correo' }}</h1>
+        <p role="status">{{ texto }}</p>
+        {% if token %}
+        <form class="auth-panel__form" method="post" action="{{ '/restablecer' if accion == 'restablecer' else '/verificar-correo' }}">
+            <input type="hidden" name="token" value="{{ token }}">
+            {% if accion == 'restablecer' %}
+            <label class="auth-field">Nueva contraseña<input type="password" name="contrasena" required {% include "components/auth/clave_atributos.html" %}></label>
+            <small>Incluye al menos 8 números, una mayúscula y un símbolo (máximo 256 caracteres).</small>
+            {% endif %}
+            <button class="auth-field--submit" type="submit">{{ 'Guardar contraseña' if accion == 'restablecer' else 'Confirmar mi correo' }}</button>
+        </form>
+        {% endif %}
+        <div class="auth-panel__links"><a href="/?acceso=login">Iniciar sesión</a></div>
+    </div>
+</section>
 {% endblock %}

@@ -1,9 +1,8 @@
-
 from __future__ import annotations
 
 from fastapi import HTTPException, Request
 
-from app.current_user import SesionActual, obtener_sesion_actual
+from app.controllers.sesion import SesionActual, obtener_sesion_actual
 
 
 def exigir_sesion(request: Request) -> SesionActual:
@@ -20,4 +19,3 @@ def exigir_admin(request: Request) -> SesionActual:
     if sesion["tipo"] != "administrador":
         raise HTTPException(status_code=403, detail="Solo para administradores")
     return sesion
-

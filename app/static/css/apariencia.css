@@ -1,0 +1,120 @@
+:root {
+    --superficie: #fff;
+    --suave: #f8f6f3;
+    --borde: #e2dcd5;
+    --tinta: #28231f;
+    --secundario: #615950;
+    --nota: #71675f;
+    --accion: #ab4309;
+}
+body { min-height: 100vh; min-height: 100dvh; display:flex; flex-direction:column; }
+body > main { flex:1; min-width:0; }
+body:has(.equipo-acceso) { padding-bottom:0; }
+.tema-boton, .ficha-editor button {
+    padding:.55rem .85rem; border:1px solid var(--borde); border-radius:.6rem;
+    color:var(--tinta); background:var(--superficie); font:inherit;
+}
+.tema-boton[aria-pressed="true"] { color:#ffad78; border-color:#a46c47; }
+.category-card, .category-card.admin-agregar {
+    background:var(--suave) !important; border:1px solid var(--borde);
+    box-shadow:0 2px 6px #382b1e0a; color:var(--tinta);
+}
+.category-card::after { background:none; }
+.category-card__label { background:var(--superficie); color:var(--tinta); }
+.detalle-container h1.detalle-titulo { margin:0 0 clamp(1.3rem, 3vw, 2.3rem); }
+.detalle-specs .detalle-info-item { gap:.6rem 1.2rem; align-items:baseline; }
+.detalle-info, .detalle-galeria, .maquinas-main, .detalle-info-card { min-width:0; }
+.ficha-tabla { overflow-wrap:anywhere; }
+.ficha-editor { padding:1rem; border:1px solid var(--borde); border-radius:12px; min-width:0; }
+.ficha-editor legend { font-weight:700; }
+.ficha-fila { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto; align-items:end; gap:8px; margin:12px 0; }
+.auth-panel { max-height:75dvh; overflow:auto; z-index:1100; }
+.auth-panel__links a { color:var(--secundario); }
+.auth-panel .auth-estado, .auth-ayuda { font-size:.82rem; color:var(--nota); line-height:1.5; }
+.auth-estado { margin:1.2rem 0 0; }
+.auth-estado:empty { display:none; }
+.auth-field--submit { background:var(--accion); color:#fff; }
+.correo-pagina { min-height:45vh; display:grid; place-items:center; padding:2rem 1rem; }
+.correo-dialogo {
+    margin:auto; width:min(27rem,calc(100% - 2rem)); padding:clamp(1.25rem,4vw,2.25rem);
+    border:1px solid var(--borde); border-top:4px solid var(--color-orange); border-radius:16px;
+    background:var(--superficie); color:var(--tinta); box-shadow:0 16px 64px #29180726;
+}
+.correo-dialogo h1,.correo-dialogo h2 { margin-top:0; }
+.correo-dialogo p { line-height:1.55; }
+.correo-dialogo::backdrop { background:#20170f80; }
+:focus-visible { outline:3px solid #e67934; outline-offset:2px; }
+html[data-tema="noche"] {
+    color-scheme:dark; --superficie:#252321; --suave:#302d29; --borde:#48433c;
+    --tinta:#f4efe8; --secundario:#cec3b5; --nota:#d9cfc4;
+    --color-black:var(--tinta); --color-white:var(--superficie);
+    --color-grey-100:var(--suave); --color-grey-200:var(--borde); --color-grey-500:var(--secundario);
+    --color-red:#ff9754;
+}
+[data-tema="noche"] body { background:#1c1b19; color:var(--tinta); }
+[data-tema="noche"] :is(.topbar,.maquinas-sidebar,.maquinas-card,.detalle-info-card,.carrito-item,.carrito-resumen,.equipo-panel,.equipo-acceso,.admin-dialogo,.modal-content,.admin-agregar,.auth-panel,.checkout-card,.carrito-vacio) {
+    background:var(--superficie); color:var(--tinta); border-color:var(--borde);
+}
+[data-tema="noche"] :is(.categories,.maquinas-container,.detalle-container,.carrito-container,.detalle-precio-section,.categoria,.cantidad-input-group,.ficha-tabla th,.resumen-total,.admin-form input,.admin-form select,.admin-form textarea,input,select,textarea) {
+    background:var(--suave); color:var(--tinta); border-color:var(--borde);
+}
+[data-tema="noche"] :is(.detalle-container,.maquinas-container,.carrito-container,.equipo-panel,.modal-content) :is(h1,h2,h3,p,label,.detalle-info-value,.ficha-tabla td,.maquinas-card-title,.spec-label,.detalle-info-label,.maquinas-card-spec,.precio-label) { color:var(--tinta); }
+[data-tema="noche"] :is(.precio-valor,.topbar__link.is-active,.total-estimado) { color:#ffa265; }
+[data-tema="noche"] .categoria.active { border-color:#ef914d; }
+[data-tema="noche"] .hero__copy { color:#fff; }
+@media(max-width:800px) {
+    .topbar__nav,.topbar__auth { overflow:visible; flex-wrap:wrap; justify-content:flex-start; gap:4px; }
+    .topbar__nav { padding:4px 0; }
+    .topbar__link,.tema-boton { padding:8px 10px; font-size:.9rem; }
+    .auth-panel { position:fixed; inset:auto 12px 12px; width:min(360px,calc(100% - 24px)); margin-left:auto; max-height:80dvh; }
+    .maquinas-container,.detalle-container,.carrito-content { display:grid; grid-template-columns:minmax(0,1fr); }
+    .maquinas-sidebar { width:100%; }
+    .detalle-precio,.detalle-cantidad,.topbar__auth { flex-wrap:wrap; }
+}
+@media(max-width:600px) {
+    .categories__grid,.maquinas-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(145px,100%),1fr)); }
+    .detalle-info-card { padding:18px; }
+    .detalle-container { padding:0 12px; }
+    .detalle-specs .detalle-info-item { display:grid; grid-template-columns:1fr; gap:.25rem; }
+    .detalle-specs .detalle-info-value { text-align:left; }
+    .carrito-item { flex-wrap:wrap; }
+    .ficha-fila { grid-template-columns:minmax(0,1fr); }
+    .carrito-flotante { top:auto; bottom:14px; right:12px; transform:none; }
+    .footer { grid-template-columns:1fr; }
+}
+[data-tema="noche"] :is(.footer,.footer__bottom) {
+    --color-black:#131211; --color-grey-500:#bdb4a9; --color-white:#f8f5ef; --color-grey-200:#e5ded3;
+}
+[data-tema="noche"] :is(.pago-panel,.pago-linea,.categoria:hover,.maquinas-card-img) {
+    background:var(--superficie); color:var(--tinta);
+}
+[data-tema="noche"] .hero { background:#171512; }
+[data-tema="noche"] .hero__bg { opacity:.29; }
+[data-tema="noche"] .hero__subtitle { color:#eee6dc; }
+[data-tema="noche"] .btn-volver { color:#28231f; background:#e8ded3; }
+[data-tema="noche"] .auth-field--choice { color:var(--tinta); }
+.categoria.active .checkbox { background:#a8440e; border-color:#a8440e; }
+.categoria.active { background:var(--suave); }
+@media(max-width:600px) {
+    .maquinas-container { padding:18px 12px; gap:16px; }
+    .maquinas-grid { grid-template-columns:repeat(auto-fit,minmax(min(190px,100%),1fr)); }
+    .hero { min-height:185px; }
+    .hero__excavator { height:68%; max-width:53%; object-fit:contain; }
+    .hero__copy { top:12%; }
+    .category-card { height:155px; }
+    .category-card__label { padding:7px 9px; }
+}
+@media(min-width:801px) and (max-width:1000px) {
+    .auth-panel { left:auto; right:0; }
+    .topbar { gap:8px; padding-inline:20px; }
+    .topbar__nav { padding-inline:4px; }
+    .topbar__link { padding-inline:9px; }
+}
+.topbar__user { max-width:min(42vw,20rem); overflow:hidden; text-overflow:ellipsis; }
+[data-tema="noche"] .admin-form :is(input:not([type="checkbox"]),textarea,select) {
+    background:var(--suave); color:var(--tinta); border-color:var(--borde);
+}
+[data-tema="noche"] .admin-cerrar { color:var(--tinta); }
+[data-tema="noche"] .pago-container { color:var(--tinta); }
+[data-tema="noche"] .pago-aviso { background:#3b3023; color:#f3dab5; }
+[data-tema="noche"] .pago-aviso.error { background:#3c2924; color:#ffcab6; }

@@ -10,24 +10,30 @@ class CorreoNoDisponible(RuntimeError):
 
 
 def enviar_verificacion(destino: str, token: str) -> None:
+    _enviar(destino, "Confirma tu correo", "verificar-correo", token,
+            "Abre este enlace y confirma tu dirección para activar tu cuenta.")
+
+
+def enviar_recuperacion(destino: str, token: str) -> None:
+    _enviar(destino, "Restablece tu contraseña", "restablecer", token,
+            "Abre este enlace para elegir una nueva contraseña.")
+
+
+def _enviar(destino, asunto, ruta, token, instruccion):
     host = os.getenv("SMTP_HOST", "")
     usuario = os.getenv("SMTP_USER", "")
     clave = os.getenv("SMTP_PASSWORD", "")
     remitente = os.getenv("SMTP_FROM", usuario)
     base = os.getenv("PUBLIC_BASE_URL", "").rstrip("/")
     url = urlparse(base)
-    if not host or not usuario or not clave or not remitente or url.scheme not in ("http", "https") or not url.netloc:
+    if not host or not usuario or not clave or not remitente or url.scheme not in ("http", "https") or not url.hostname or url.path or url.query or url.fragment:
         raise CorreoNoDisponible("Falta configurar el correo del servidor.")
     mensaje = EmailMessage()
     mensaje["From"] = remitente
     mensaje["To"] = destino
-    mensaje["Subject"] = "Confirma tu correo · MSPS"
-    mensaje.set_content(
-        "Recibimos una solicitud de registro en MSPS.\n\n"
-        f"Para activar tu cuenta, abre {base}/verificar-correo?token={token}\n\n"
-        "El enlace vence en 30 minutos. Confirma con el botón de la página.\n"
-        "Si no solicitaste esta cuenta, puedes ignorar este mensaje."
-    )
+    mensaje["Subject"] = asunto + " · MSPS"
+    mensaje.set_content(f"{instruccion}\n\n{base}/{ruta}?token={token}\n\n"
+                        "El enlace vence en 30 minutos. Si no lo solicitaste, ignora este correo.")
     try:
         puerto = int(os.getenv("SMTP_PORT", "587"))
         contexto = ssl.create_default_context()
@@ -41,4 +47,4 @@ def enviar_verificacion(destino: str, token: str) -> None:
             servidor.login(usuario, clave)
             servidor.send_message(mensaje)
     except (OSError, smtplib.SMTPException, ValueError) as error:
-        raise CorreoNoDisponible("No se pudo enviar el correo. Intenta registrarte nuevamente.") from error
+        raise CorreoNoDisponible("No se pudo enviar el correo. Intenta de nuevo más tarde.") from error

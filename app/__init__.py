@@ -1,6 +1,11 @@
 from pathlib import Path
 import time
 
+from dotenv import load_dotenv
+
+# Lee la configuración local antes de inicializar la conexión y la clave de sesión.
+load_dotenv(Path(__file__).resolve().parent.parent / ".env", override=False)
+
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware

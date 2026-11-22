@@ -1,24 +1,4 @@
-"""
-Catálogo real de maquinaria de MSPS (datos + Director del Builder).
 
-Cada entrada de `_MAQUINAS` describe UNA máquina física y las fotos que
-le corresponden. Las 22 fotos enviadas se agruparon por máquina física
-(placa visible en el equipo, mismo sitio de obra, mismo modelo y mismo
-momento de captura) y cada foto aparece exactamente una vez.
-
-Patrón creacional: `CatalogoDirector` es el Director del patrón Builder:
-conoce el orden de los pasos y los ejecuta sobre un MaquinaDocumentoBuilder
-sin saber cómo se guarda ni cómo se muestra el resultado.
-
-IMPORTANTE sobre los datos:
-- Las fichas técnicas salen de fabricante/distribuidor (ver `fuentes`).
-  Cuando una máquina existe en varias versiones (p. ej. Kobelco SK140LC -8
-  y -10) se muestran rangos, no un valor inventado.
-- `confianza="media"` en una imagen significa que corresponde al modelo,
-  pero no se pudo confirmar que sea la misma unidad (la placa no se ve).
-- Las tarifas NO se inventaron: complete TARIFAS_COP_POR_HORA. Mientras
-  una máquina no tenga tarifa, el sitio muestra "Tarifa por cotizar".
-"""
 from __future__ import annotations
 
 from typing import Any, Callable

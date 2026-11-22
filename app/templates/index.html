@@ -1,9 +1,6 @@
 {% extends "base.html" %}
 
 {% block content %}
-{% if mensaje %}
-<div role="status" class="{% if mensaje.tipo == 'exito' %}aviso-cuenta aviso-cuenta--inicio{% else %}msps-mensaje msps-mensaje--{{ mensaje.tipo }}{% endif %}">{{ mensaje.texto }}</div>
-{% endif %}
 <section class="hero">
    <img class="hero__bg" src="{{ url_for('static', path='/images/hero/fondo2.png') }}" alt="Zona de construcción con maquinaria pesada">
 

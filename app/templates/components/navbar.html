@@ -1,4 +1,3 @@
-
 <header class="topbar">
     <a class="topbar__brand" href="/" aria-label="Maquiservicio Pérez S.A.S. - Inicio">
         <img class="topbar__logo" src="{{ url_for('static', path='/images/logo/logo-msps.png') }}" alt="Maquiservicio Pérez S.A.S.">
@@ -9,6 +8,7 @@
         <a class="topbar__link{% if item.active %} is-active{% endif %}" href="{{ item.href }}">{{ item.label }}</a>
         {% endfor %}
 
+        <button type="button" class="tema-boton" aria-pressed="false" data-tema>Modo noche</button>
         <div class="topbar__auth" data-auth-root>
             {% if sesion %}
                 {% if sesion.tipo == 'persona_natural' %}

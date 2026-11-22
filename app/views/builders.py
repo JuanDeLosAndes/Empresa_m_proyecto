@@ -1,9 +1,8 @@
-
 from __future__ import annotations
 
 from typing import Any
 
-from app.formularios import AuthFormFactory
+from app.views.formularios import AuthFormFactory
 
 
 class PageContextBuilder:
@@ -84,3 +83,5 @@ class PageContextBuilder:
 
     def build(self) -> dict[str, Any]:
         return self._context
+
+

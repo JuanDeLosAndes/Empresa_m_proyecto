@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% block estilos_pagina %}<link rel="stylesheet" href="/static/css/pagos.css">{% endblock %}
 {% block content %}
 <section class="carrito-container pago-container">
     {% set nombres = {'PENDING':'Esperando confirmación', 'APPROVED':'Pago aprobado', 'DECLINED':'Pago rechazado', 'ERROR':'El pago no se completó', 'VOIDED':'Pago anulado'} %}

@@ -14,7 +14,7 @@ def url_local(context, name, **params):
     return context["request"].url_for(name, **params).path
 
 
-TEMPLATES_DIR = Path(__file__).resolve().parent / "templates"
+TEMPLATES_DIR = Path(__file__).resolve().parents[1] / "templates"
 
 
 def contexto_navegacion(request: Request) -> dict:

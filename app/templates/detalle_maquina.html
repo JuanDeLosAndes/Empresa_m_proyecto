@@ -148,12 +148,12 @@
 
             {% endif %}
             <!-- CUADRO DE INFORMACIÓN (ficha técnica del documento NoSQL) -->
-            {% if ficha and ficha.cuadro_info %}
+            {% if filas_tecnicas %}
             <div class="detalle-caracteristicas">
                 <h3>Ficha técnica</h3>
                 <table class="ficha-tabla">
                     <tbody>
-                    {% for fila in ficha.cuadro_info %}
+                    {% for fila in filas_tecnicas %}
                         <tr>
                             <th scope="row">{{ fila.etiqueta }}</th>
                             <td>{{ fila.valor }}</td>
@@ -161,7 +161,7 @@
                     {% endfor %}
                     </tbody>
                 </table>
-                <p class="ficha-nota">Valores de referencia del fabricante; pueden variar según la versión y la configuración del equipo.</p>
+
             </div>
             {% endif %}
 

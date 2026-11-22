@@ -4,8 +4,9 @@ import re
 import secrets
 import time
 
-from app.correo import enviar_verificacion
+from collections.abc import Callable
 from app.database import ERRORES_INTEGRIDAD, transaccion
+from app.models.credenciales import validar_contrasena, validar_correo
 from app.security import hash_password
 
 
@@ -16,13 +17,6 @@ def validar_nit(valor: str) -> str:
         raise ValueError("El NIT debe tener 9 números, con un dígito de verificación opcional. Ejemplo: 900123456-7.")
     digitos = valor.replace(".", "").replace("-", "")
     return digitos[:9]  # La identidad no depende de cómo se escribió el DV.
-
-
-def validar_correo(valor: str) -> str:
-    valor = valor.strip().lower()
-    if len(valor) > 254 or not re.fullmatch(r"[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+", valor):
-        raise ValueError("Escribe un correo válido.")
-    return valor
 
 
 def comprobar_duplicados(db, tipo, datos):
@@ -48,8 +42,9 @@ def comprobar_duplicados(db, tipo, datos):
 
 
 def solicitar(tipo: str, nombre: str, correo: str, contrasena: str, documento: str,
-              *, telefono: str = "", direccion: str = "") -> None:
+              *, enviar: Callable[[str, str], None], telefono: str = "", direccion: str = "") -> None:
     correo = validar_correo(correo)
+    validar_contrasena(contrasena)
     nombre = nombre.strip()
     if not nombre or len(nombre) > 120 or not contrasena or len(contrasena) > 256:
         raise ValueError("Revisa el nombre y la contraseña.")
@@ -83,7 +78,7 @@ def solicitar(tipo: str, nombre: str, correo: str, contrasena: str, documento: s
         db.execute("INSERT INTO registros_pendientes VALUES (?, ?, ?, ?, ?, ?)",
                    (huella, correo, tipo, json.dumps(datos), ahora, ahora + 1800))
     try:
-        enviar_verificacion(correo, token)
+        enviar(correo, token)
     except Exception:
         with transaccion() as db:
             db.execute("DELETE FROM registros_pendientes WHERE token_hash = ?", (huella,))

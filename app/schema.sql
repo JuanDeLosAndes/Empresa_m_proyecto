@@ -63,6 +63,7 @@ CREATE TABLE IF NOT EXISTS maquinarias (
     descripcion     TEXT,
     capacidad       TEXT,
     modelo          TEXT,
+    ficha_admin      TEXT,
     costo_por_hora  REAL NOT NULL CHECK (costo_por_hora >= 0),
     placa           TEXT NOT NULL UNIQUE,
     disponible      INTEGER NOT NULL DEFAULT 1 CHECK(disponible IN (0, 1)),
@@ -174,4 +175,12 @@ ON pedidos_pago(propietario_tipo, propietario_id, creada DESC);
 CREATE INDEX IF NOT EXISTS idx_pedidos_pendientes
 ON pedidos_pago(propietario_tipo, propietario_id, ambiente, huella, estado);
 
+CREATE TABLE IF NOT EXISTS recuperaciones (
+    token_hash TEXT PRIMARY KEY,
+    correo TEXT NOT NULL UNIQUE,
+    tipo TEXT NOT NULL,
+    titular BIGINT NOT NULL,
+    creado BIGINT NOT NULL,
+    vence BIGINT NOT NULL
+);
 

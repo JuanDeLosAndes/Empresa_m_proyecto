@@ -19,6 +19,7 @@
         <p class="admin-ayuda">Un precio de cero indica que se requiere cotización.</p>
         <label>Capacidad<input name="capacidad" maxlength="200"></label>
         <label>Descripción<textarea name="descripcion" maxlength="4000" rows="3"></textarea></label>
+        {% include "components/ficha_campos.html" %}
         <label class="admin-check"><input name="disponible" type="checkbox" checked> Disponible para alquiler</label>
         <label>Imágenes de la máquina
             <input name="archivos" type="file" accept="image/jpeg,image/png,image/webp" multiple>

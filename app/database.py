@@ -168,6 +168,8 @@ def preparar_esquema_sqlite(conn: sqlite3.Connection) -> None:
     _migrar_esquema_anterior(conn)
     with open(SCHEMA_PATH, "r", encoding="utf-8") as archivo:
         conn.executescript(archivo.read())
+    if "ficha_admin" not in _columnas(conn, "maquinarias"):
+        conn.execute("ALTER TABLE maquinarias ADD COLUMN ficha_admin TEXT")
     if "disponible" not in _columnas(conn, "maquinarias"):
         conn.execute("ALTER TABLE maquinarias ADD COLUMN disponible INTEGER NOT NULL DEFAULT 1 CHECK(disponible IN (0, 1))")
 

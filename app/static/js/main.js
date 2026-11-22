@@ -1,8 +1,4 @@
-/**
- * MSPS - interacción del navbar: mini pestañas de "Iniciar sesion" y
- * "Registrarse", incluyendo el paso previo de elegir tipo de cuenta
- * (persona natural / empresa) dentro del panel de registro.
- */
+
 (function () {
     "use strict";
 
@@ -33,6 +29,54 @@
         });
     }
 
+    document.addEventListener('msps:login', () => {
+        openPanel('login');
+        authRoot.querySelector('[name="identificador"]')?.focus();
+    });
+
+    document.addEventListener('click', event => {
+        const link = event.target.closest('a[href]');
+        if (!link || !authRoot.querySelector('[data-auth-panel="login"]')) return;
+        const destino = link.getAttribute('href');
+        if (['/carrito', '/?acceso=login', '/?acceso=registro'].includes(destino)) {
+            event.preventDefault();
+            const panel = destino.endsWith('registro') ? 'register' : 'login';
+            openPanel(panel);
+            authRoot.querySelector('[data-auth-panel="' + panel + '"] input')?.focus();
+        }
+    });
+
+    authRoot.querySelectorAll('.auth-panel form').forEach(form => {
+        form.addEventListener('submit', async event => {
+            event.preventDefault();
+            const boton = form.querySelector('button');
+            const estado = form.closest('.auth-panel').querySelector('[data-estado]');
+            boton.disabled = true;
+            estado.textContent = '';
+            try {
+                const respuesta = await fetch(form.action, {
+                    method: 'POST', body: new FormData(form), headers: {Accept: 'application/json'}
+                });
+                const datos = await respuesta.json();
+                if (!respuesta.ok) {
+                    estado.textContent = datos.mensaje || 'Revisa los campos e intenta de nuevo.';
+                } else if (form.getAttribute('action') === '/login') {
+                    location.reload();
+                } else {
+                    form.reset();
+                    closeAllPanels();
+                    const aviso = document.querySelector('#aviso-correo');
+                    aviso.querySelector('[role="status"]').textContent = datos.mensaje;
+                    aviso.showModal();
+                }
+            } catch {
+                estado.textContent = 'No se pudo completar la solicitud. Intenta de nuevo.';
+            } finally {
+                boton.disabled = false;
+            }
+        });
+    });
+
     // Alternar mini pestañas de login / registro
     triggers.forEach((trigger) => {
         trigger.addEventListener("click", (event) => {
@@ -53,12 +97,12 @@
         });
     });
 
-    // Cerrar con el botón "x"
+
     authRoot.querySelectorAll("[data-auth-close]").forEach((btn) => {
         btn.addEventListener("click", closeAllPanels);
     });
 
-    // Saltar entre login <-> registro desde los enlaces internos
+
     authRoot.querySelectorAll("[data-auth-switch]").forEach((link) => {
         link.addEventListener("click", (event) => {
             event.preventDefault();
@@ -80,7 +124,7 @@
 
     // Clic fuera del panel: cerrar
     document.addEventListener("click", (event) => {
-        if (!authRoot.contains(event.target)) {
+        if (!event.defaultPrevented && !authRoot.contains(event.target)) {
             closeAllPanels();
         }
     });
@@ -92,9 +136,7 @@
         }
     });
 
-    // Tras registrarse, el servidor redirige a /?registro=ok y el panel de
-    // inicio de sesión llega abierto con el mensaje de éxito. Se limpia la URL para
-    // que al recargar la página el mensaje no vuelva a aparecer.
+
     const params = new URLSearchParams(window.location.search);
     if (params.get("registro") === "ok") {
         params.delete("registro");

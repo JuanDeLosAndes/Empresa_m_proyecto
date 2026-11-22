@@ -61,4 +61,4 @@ class CatalogoFotosModel:
             if opciones:
                 imagenes[nombre] = opciones[0]
         return imagenes
-
+# esta monda no guarda bien

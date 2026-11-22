@@ -1,4 +1,3 @@
-
 from __future__ import annotations
 
 from typing import Mapping, Optional
@@ -33,4 +32,3 @@ def mensaje_de_fotos(params: Mapping[str, str]) -> Optional[Mensaje]:
     if params.get("error") == "mongo":
         return {"tipo": "error", "texto": "MongoDB no respondió. No se hizo ningún cambio; inténtalo de nuevo."}
     return None
-

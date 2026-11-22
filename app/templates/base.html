@@ -10,6 +10,8 @@
     <link rel="stylesheet" href="/static/css/style.css">
     <link rel="stylesheet" href="/static/css/ajustes_interfaz.css?v=20261115c">
     {% block estilos_pagina %}{% endblock %}
+    <link rel="stylesheet" href="/static/css/apariencia.css">
+    <script src="/static/js/tema.js"></script>
 </head>
 <body>
     {% include "components/navbar.html" %}
@@ -17,6 +19,11 @@
     <main>
         {% block content %}{% endblock %}
     </main>
+    <dialog id="aviso-correo" class="correo-dialogo" aria-labelledby="aviso-titulo">
+        <h2 id="aviso-titulo">Revisa tu correo</h2>
+        <p role="status"></p>
+        <form method="dialog"><button class="auth-field--submit">Entendido</button></form>
+    </dialog>
 
     {% include "components/footer.html" %}
 

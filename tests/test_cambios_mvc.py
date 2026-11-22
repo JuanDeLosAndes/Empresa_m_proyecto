@@ -17,14 +17,14 @@ def sitio(tmp_path, monkeypatch):
 
 def cuenta(sitio, nombre, empresa=False):
     cliente = TestClient(sitio)
-    datos = {"correo": nombre + "@example.org", "contrasena": "ClaveDePrueba"}
+    datos = {"correo": nombre + "@example.org", "contrasena": "ClaveDePrueba12345678!"}
     if empresa:
         ruta = "/registro/empresa"
         datos.update(nombre_empresa=nombre, nit={"Alquileres": "900123456", "Equipos": "900123457"}[nombre])
     else:
         ruta = "/registro/persona"
         datos.update(usuario=nombre, cedula=nombre)
-    with patch("app.models.registro_verificado.enviar_verificacion") as enviar:
+    with patch("app.controllers.auth_controller.enviar_verificacion") as enviar:
         assert cliente.post(ruta, data=datos).status_code == 200
     correo, token = enviar.call_args.args
     assert correo == datos["correo"].lower()

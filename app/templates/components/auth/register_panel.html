@@ -20,9 +20,10 @@
             {% for field in persona_fields %}
             <label class="auth-field">
                 <span class="sr-only">{{ field.label }}</span>
-                <input type="{{ field.type }}" name="{{ field.name }}" placeholder="{{ field.placeholder }}" autocomplete="off"{% if field.required|default(true) %} required{% endif %}{% if field.name == 'nit' %} pattern="([0-9]{9}|[0-9]{3}\.[0-9]{3}\.[0-9]{3})(-[0-9])?|[0-9]{10}" title="9 números y un DV opcional. Ejemplo: 900123456-7" maxlength="13"{% endif %}>
+                <input type="{{ field.type }}" name="{{ field.name }}" placeholder="{{ field.placeholder }}" {% if field.name == 'correo' %}autocomplete="email" maxlength="254" pattern="[^@\s]+@[^@\s]+\.[^@\s]+"{% elif field.name == 'contrasena' %}{% include "components/auth/clave_atributos.html" %}{% endif %}{% if field.required|default(true) %} required{% endif %}{% if field.name == 'nit' %} pattern="([0-9]{9}|[0-9]{3}\.[0-9]{3}\.[0-9]{3})(-[0-9])?|[0-9]{10}" title="9 números y un DV opcional. Ejemplo: 900123456-7" maxlength="13"{% endif %}>
             </label>
             {% endfor %}
+            <small class="auth-ayuda">Incluye al menos 8 números, una mayúscula y un símbolo (máximo 256 caracteres).</small>
             <button type="submit" class="auth-field auth-field--submit">Crear cuenta</button>
         </form>
 
@@ -39,9 +40,10 @@
             {% for field in empresa_fields %}
             <label class="auth-field">
                 <span class="sr-only">{{ field.label }}</span>
-                <input type="{{ field.type }}" name="{{ field.name }}" placeholder="{{ field.placeholder }}" autocomplete="off"{% if field.required|default(true) %} required{% endif %}{% if field.name == 'nit' %} pattern="([0-9]{9}|[0-9]{3}\.[0-9]{3}\.[0-9]{3})(-[0-9])?|[0-9]{10}" title="9 números y un DV opcional. Ejemplo: 900123456-7" maxlength="13"{% endif %}>
+                <input type="{{ field.type }}" name="{{ field.name }}" placeholder="{{ field.placeholder }}" {% if field.name == 'correo' %}autocomplete="email" maxlength="254" pattern="[^@\s]+@[^@\s]+\.[^@\s]+"{% elif field.name == 'contrasena' %}{% include "components/auth/clave_atributos.html" %}{% endif %}{% if field.required|default(true) %} required{% endif %}{% if field.name == 'nit' %} pattern="([0-9]{9}|[0-9]{3}\.[0-9]{3}\.[0-9]{3})(-[0-9])?|[0-9]{10}" title="9 números y un DV opcional. Ejemplo: 900123456-7" maxlength="13"{% endif %}>
             </label>
             {% endfor %}
+            <small class="auth-ayuda">Incluye al menos 8 números, una mayúscula y un símbolo (máximo 256 caracteres).</small>
             <button type="submit" class="auth-field auth-field--submit">Crear cuenta</button>
         </form>
 
@@ -50,4 +52,5 @@
             <a href="#" data-auth-switch="login">¿Ya tienes cuenta?</a>
         </div>
     </div>
+    <p data-estado class="auth-estado" role="status"></p>
 </div>

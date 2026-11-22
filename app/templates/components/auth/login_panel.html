@@ -1,5 +1,4 @@
-
-<div class="auth-panel" data-auth-panel="login"{% if not registro_ok and panel_acceso != "login" %} hidden{% endif %}>
+<div class="auth-panel" data-auth-panel="login"{% if not registro_ok and panel_acceso != "login" and request.query_params.get("login") != "error" %} hidden{% endif %}>
     <button type="button" class="auth-panel__close" data-auth-close aria-label="Cerrar">&times;</button>
 
     <h3 class="auth-panel__title">Iniciar Sesión:</h3>
@@ -20,7 +19,19 @@
     </form>
 
     <div class="auth-panel__links">
-        <a href="#">¿Olvidaste tu contraseña?</a>
+        <a href="#" data-auth-switch="recuperar">¿Olvidaste tu contraseña?</a>
         <a href="#" data-auth-switch="register">¿No tienes cuenta?</a>
     </div>
+    <p class="auth-estado" data-estado role="status">{% if request.query_params.get("login") == "error" %}Usuario o contraseña incorrectos.{% endif %}</p>
+</div>
+
+<div class="auth-panel" data-auth-panel="recuperar" hidden>
+    <button type="button" class="auth-panel__close" data-auth-close aria-label="Cerrar">×</button>
+    <h3>Recuperar contraseña</h3>
+    <form action="/recuperar" method="post" class="auth-panel__form">
+        <label class="auth-field">Correo registrado<input name="correo" type="email" autocomplete="email" required></label>
+        <button class="auth-field--submit">Enviar enlace</button>
+    </form>
+    <div class="auth-panel__links"><a href="#" data-auth-switch="login">Volver al inicio de sesión</a></div>
+    <p class="auth-estado" data-estado role="status"></p>
 </div>

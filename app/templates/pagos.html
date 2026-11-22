@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% block estilos_pagina %}<link rel="stylesheet" href="/static/css/pagos.css">{% endblock %}
 {% block content %}
 <section class="carrito-container pago-container">
     <div class="pago-titulo"><h1>{{ 'Pagos recibidos' if sesion.tipo == 'administrador' else 'Mis pagos' }}</h1><a href="/carrito">Ver carrito</a></div>

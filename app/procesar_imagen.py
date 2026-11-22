@@ -1,9 +1,4 @@
-"""Procesa una foto subida por el administrador antes de guardarla en MongoDB.
 
-Es la misma receta de tools/importar_imagenes.py: corrige la rotación del
-celular, reduce a 1400 px, convierte a JPEG progresivo y NO escribe metadatos
-(así se pierde el GPS de la foto).
-"""
 from __future__ import annotations
 
 import io

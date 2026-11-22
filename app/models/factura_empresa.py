@@ -1,8 +1,3 @@
-"""
-Modelo de Factura para Empresa (la M de MVC).
-
-Encapsula el acceso a la tabla `facturas_empresa`.
-"""
 from __future__ import annotations
 
 from dataclasses import dataclass

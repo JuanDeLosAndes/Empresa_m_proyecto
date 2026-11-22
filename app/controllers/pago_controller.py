@@ -6,13 +6,13 @@ import secrets
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import JSONResponse, RedirectResponse
 
-from app.builders import PageContextBuilder
+from app.views.builders import PageContextBuilder
 from app.controllers.dependencias import exigir_sesion, exigir_admin
-from app.current_user import SesionActual, obtener_sesion_actual
+from app.controllers.sesion import SesionActual, obtener_sesion_actual
 from app.factories import crear_carrito, crear_consulta_pagos, crear_pagos
 from app.models.registro_verificado import validar_correo
 from app.pagos.wompi import PagosNoConfigurados, ProveedorNoDisponible
-from app.templating import templates
+from app.views.templating import templates
 
 router = APIRouter()
 

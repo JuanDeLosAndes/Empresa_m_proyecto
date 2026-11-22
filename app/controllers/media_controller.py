@@ -1,4 +1,3 @@
-
 from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.factories import crear_galeria_maquina
@@ -18,4 +17,3 @@ def imagen_maquina(archivo: str, request: Request) -> Response:
     if request.headers.get("if-none-match") == etag:
         return Response(status_code=304, headers=cabeceras)
     return Response(content=imagen.contenido, media_type=imagen.tipo_contenido, headers=cabeceras)
-

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+import json
 from dataclasses import dataclass
 from typing import Optional
 
@@ -20,6 +21,8 @@ class Maquinaria:
     nombre_categoria: Optional[str] = None
     disponible: bool = True
 
+    ficha_tecnica: dict[str, str] | None = None
+
     @property
     def tiene_tarifa(self) -> bool:
         return self.costo_por_hora > 0
@@ -33,6 +36,7 @@ class Maquinaria:
         return Maquinaria(
             id_maquinaria=row["id_maquinaria"],
             marca=row["marca"],
+            ficha_tecnica=json.loads(row["ficha_admin"]) if row["ficha_admin"] else None,
             disponible=bool(row["disponible"]) if "disponible" in row.keys() else True,
             descripcion=row["descripcion"],
             capacidad=row["capacidad"],
@@ -82,6 +86,7 @@ class MaquinariaModel:
         capacidad: Optional[str] = None,
         modelo: Optional[str] = None,
         disponible: bool = True,
+        ficha_tecnica: dict[str, str] | None = None,
     ) -> Maquinaria:
         validar_tarifa(costo_por_hora)
         with transaccion() as conn:
@@ -90,9 +95,10 @@ class MaquinariaModel:
             try:
                 cursor = conn.execute(
                     """INSERT INTO maquinarias
-                       (marca, descripcion, capacidad, modelo, costo_por_hora, placa, id_categoria, disponible)
-                       VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING id_maquinaria""",
-                    (marca, descripcion, capacidad, modelo, costo_por_hora, placa, id_categoria, int(disponible)),
+                       (marca, descripcion, capacidad, modelo, costo_por_hora, placa, id_categoria, disponible, ficha_admin)
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id_maquinaria""",
+                    (marca, descripcion, capacidad, modelo, costo_por_hora, placa, id_categoria, int(disponible),
+                     json.dumps(ficha_tecnica, ensure_ascii=False) if ficha_tecnica else None),
                 )
             except ERRORES_INTEGRIDAD as error:
                 raise ValueError("Ya existe una máquina con esa placa") from error
@@ -102,13 +108,14 @@ class MaquinariaModel:
 
     @staticmethod
     def actualizar(id_maquinaria: int, costo_por_hora: float, capacidad: str,
-                   descripcion: str, disponible: bool) -> Maquinaria:
+                   descripcion: str, disponible: bool, ficha_tecnica: dict[str, str] | None = None) -> Maquinaria:
         validar_tarifa(costo_por_hora)
         with transaccion() as conn:
             resultado = conn.execute(
-                """UPDATE maquinarias SET costo_por_hora = ?, capacidad = ?, descripcion = ?, disponible = ?
+                """UPDATE maquinarias SET costo_por_hora = ?, capacidad = ?, descripcion = ?, disponible = ?,
+                          ficha_admin = COALESCE(?, ficha_admin)
                    WHERE id_maquinaria = ? AND eliminada = 0""",
-                (costo_por_hora, capacidad, descripcion, int(disponible), id_maquinaria),
+                (costo_por_hora, capacidad, descripcion, int(disponible), json.dumps(ficha_tecnica, ensure_ascii=False) if ficha_tecnica else None, id_maquinaria),
             )
             if not resultado.rowcount:
                 raise LookupError("Máquina no encontrada")
@@ -130,3 +137,12 @@ class MaquinariaModel:
 def validar_tarifa(valor: float) -> None:
     if not math.isfinite(valor) or valor < 0:
         raise ValueError("El precio debe ser un número mayor o igual a cero")
+
+def filas_tecnicas(maquina, documento):
+    if maquina.ficha_tecnica:
+        return [{"etiqueta": k, "valor": v} for k, v in maquina.ficha_tecnica.items()]
+    if documento and documento.cuadro_info:
+        return documento.cuadro_info
+    datos = {"Marca": maquina.marca, "Modelo": maquina.modelo, "Categoría": maquina.nombre_categoria,
+             "Placa": maquina.placa, "Capacidad": maquina.capacidad, "Descripción": maquina.descripcion}
+    return [{"etiqueta": k, "valor": v} for k, v in datos.items() if v]

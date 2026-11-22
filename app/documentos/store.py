@@ -7,10 +7,8 @@ import time
 from typing import Callable, TypeVar
 
 import pymongo
-from dotenv import load_dotenv
 from pymongo.errors import ConfigurationError, ConnectionFailure, ExecutionTimeout, OperationFailure, ServerSelectionTimeoutError
 
-load_dotenv()
 logger = logging.getLogger(__name__)
 T = TypeVar("T")
 

@@ -1,14 +1,14 @@
 from fastapi import APIRouter, HTTPException, Request
 
-from app.builders import PageContextBuilder
-from app.current_user import obtener_sesion_actual
+from app.views.builders import PageContextBuilder
+from app.controllers.sesion import obtener_sesion_actual
 from app.factories import crear_catalogo_fotos
-from app.mensajes import mensaje_de_inicio, mensaje_de_fotos
+from app.views.mensajes import mensaje_de_fotos
 from app.models.carrito import LineaCarrito
 from app.models.catalogo_fotos import ImagenCategoria
 from app.models.categoria import CategoriaModel
-from app.models.maquinaria import MaquinariaModel
-from app.templating import templates
+from app.models.maquinaria import MaquinariaModel, filas_tecnicas
+from app.views.templating import templates
 
 router = APIRouter()
 
@@ -44,7 +44,6 @@ def home(request: Request):
         )
         .with_category_cards(categorias, imagenes)
         .with_sesion(obtener_sesion_actual(request))
-        .with_mensaje(mensaje_de_inicio(request.query_params))
         .with_registro_ok(request.query_params.get("registro") == "ok")
         .build()
     )
@@ -90,8 +89,10 @@ def detalle_maquina(request: Request, id: int):
     context["maquina"] = maquina
     context["estimacion_inicial"] = LineaCarrito(maquina, 1).total if maquina.permite_alquiler_directo else None
     context["ficha"] = catalogo.ficha_de(maquina.placa)
+    context["filas_tecnicas"] = filas_tecnicas(maquina, context["ficha"])
     context["imagen_categoria"] = _urls_de_imagenes(
         request, catalogo.imagenes_por_categoria([maquina.nombre_categoria])
     ).get(maquina.nombre_categoria)
     context["mensaje_fotos"] = mensaje_de_fotos(request.query_params)
     return templates.TemplateResponse(request, "detalle_maquina.html", context)
+

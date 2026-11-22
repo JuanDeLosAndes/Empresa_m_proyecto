@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
-from app.builders import PageContextBuilder
+from app.views.builders import PageContextBuilder
 from app.controllers.dependencias import exigir_sesion
 from app.models import afiliacion
-from app.templating import templates
+from app.views.templating import templates
 
 router = APIRouter()
 

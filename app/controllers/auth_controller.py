@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Form, Request
-from app.models import registro_verificado
-from app.correo import CorreoNoDisponible
-from app.builders import PageContextBuilder
-from app.templating import templates
-from app.current_user import obtener_sesion_actual
-from fastapi.responses import RedirectResponse
+import logging
+
+from app.models import registro_verificado, recuperacion
+from app.services.correo import CorreoNoDisponible, enviar_recuperacion, enviar_verificacion
+from app.views.builders import PageContextBuilder
+from app.views.templating import templates
+from app.controllers.sesion import obtener_sesion_actual
+from fastapi.responses import JSONResponse, RedirectResponse
 
 from app.factories import crear_carrito
 from app.models.autenticacion import AutenticacionModel
@@ -15,16 +17,22 @@ from app.security import SESSION_COOKIE_NAME, firmar_sesion
 router = APIRouter()
 
 
-def pagina_estado(request, texto, token=None, status=200):
+def respuesta_json(request):
+    return "application/json" in request.headers.get("accept", "")
+
+
+def pagina_estado(request, texto, token=None, status=200, accion="verificar"):
+    if respuesta_json(request):
+        return JSONResponse({"mensaje": texto}, status_code=status, headers={"Cache-Control": "no-store"})
     contexto = PageContextBuilder().with_title("Verificar correo · MSPS").with_sesion(obtener_sesion_actual(request)).build()
-    contexto.update(texto=texto, token=token)
+    contexto.update(texto=texto, token=token, accion=accion)
     return templates.TemplateResponse(request, "verificar_correo.html", contexto, status_code=status,
                                       headers={"Cache-Control": "no-store", "Referrer-Policy": "no-referrer"})
 
 
 def registrar(request, tipo, nombre, correo, contrasena, documento, **contacto):
     try:
-        registro_verificado.solicitar(tipo, nombre, correo, contrasena, documento, **contacto)
+        registro_verificado.solicitar(tipo, nombre, correo, contrasena, documento, enviar=enviar_verificacion, **contacto)
     except ValueError as error:
         return pagina_estado(request, str(error), status=400)
     except CorreoNoDisponible as error:
@@ -62,9 +70,11 @@ def confirmar_correo(request: Request, token: str = Form(...)):
 def login(request: Request, identificador: str = Form(...), contrasena: str = Form(...)):
     credencial = AutenticacionModel.autenticar(identificador, contrasena)
     if credencial is None:
+        if respuesta_json(request):
+            return JSONResponse({"mensaje": "Usuario o contraseña incorrectos."}, status_code=401)
         return RedirectResponse(url="/?login=error", status_code=303)
 
-    respuesta = RedirectResponse(url="/?login=ok", status_code=303)
+    respuesta = JSONResponse({"ok": True}) if respuesta_json(request) else RedirectResponse(url="/?login=ok", status_code=303)
     respuesta.set_cookie(
         SESSION_COOKIE_NAME,
         firmar_sesion(credencial.tipo, credencial.id),
@@ -82,4 +92,27 @@ def logout(request: Request):
     respuesta.delete_cookie(SESSION_COOKIE_NAME)
     return respuesta
 
+@router.post("/recuperar")
+def solicitar_recuperacion(request: Request, correo: str = Form(...)):
+    try:
+        recuperacion.solicitar(correo, enviar_recuperacion)
+    except ValueError as error:
+        return pagina_estado(request, str(error), status=400)
+    except CorreoNoDisponible:
+        logging.getLogger(__name__).exception("No se pudo entregar el enlace de recuperación")
+    return pagina_estado(request, "Si el correo pertenece a una cuenta, recibirás un enlace para cambiar tu contraseña.")
+
+
+@router.get("/restablecer")
+def abrir_recuperacion(request: Request, token: str):
+    return pagina_estado(request, "Elige una nueva contraseña.", token, accion="restablecer")
+
+
+@router.post("/restablecer")
+def cambiar_contrasena(request: Request, token: str = Form(...), contrasena: str = Form(...)):
+    try:
+        recuperacion.confirmar(token, contrasena)
+    except ValueError as error:
+        return pagina_estado(request, str(error), token, status=400, accion="restablecer")
+    return pagina_estado(request, "Tu contraseña se actualizó. Ya puedes iniciar sesión.")
 

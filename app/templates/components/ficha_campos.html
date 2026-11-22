@@ -1,0 +1,14 @@
+<fieldset class="ficha-editor">
+    <legend>Ficha técnica</legend>
+    <p class="admin-ayuda">Indica al menos una característica con su valor y unidad.</p>
+    <div data-filas-ficha>
+        {% for fila in filas_tecnicas or [{'etiqueta': '', 'valor': ''}] %}
+        <div class="ficha-fila">
+            <label>Característica<input data-etiqueta required maxlength="80" placeholder="Peso operativo" value="{{ fila.etiqueta }}"></label>
+            <label>Valor<input data-valor required maxlength="240" placeholder="20 000 kg" value="{{ fila.valor }}"></label>
+            <button type="button" data-quitar aria-label="Quitar característica">×</button>
+        </div>
+        {% endfor %}
+    </div>
+    <button type="button" data-nueva-fila>+ Agregar característica</button>
+</fieldset>

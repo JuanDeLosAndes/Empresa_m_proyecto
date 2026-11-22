@@ -1,13 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import RedirectResponse
 
-from app.builders import PageContextBuilder
+from app.views.builders import PageContextBuilder
 from app.controllers.dependencias import exigir_sesion
-from app.current_user import SesionActual, obtener_sesion_actual
+from app.controllers.sesion import SesionActual, obtener_sesion_actual
 from app.factories import crear_carrito, crear_catalogo_fotos
 from app.models.carrito import MaquinaNoEncontrada, RequiereCotizacion, MaquinaNoDisponible
 from pydantic import BaseModel, Field
-from app.templating import templates
+from app.views.templating import templates
 
 router = APIRouter()
 
@@ -111,4 +111,5 @@ def ver_carrito(request: Request):
     context["resumen"] = resumen
     context["portadas"] = crear_catalogo_fotos().portadas_por_placa() if resumen.lineas else {}
     return templates.TemplateResponse(request, "carrito.html", context)
+
 

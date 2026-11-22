@@ -1,4 +1,3 @@
-"""Pruebas de extremo a extremo: las páginas leen fotos y ficha desde MongoDB."""
 import re
 from io import BytesIO
 
@@ -91,5 +90,5 @@ def test_seed_es_idempotente_no_duplica_documentos_ni_fotos(client):
 def test_detalle_de_demo_sin_documento_sigue_funcionando(client):
     r = client.get(f"/maquina/{_id_por_placa('MSP-001')}")
     assert r.status_code == 200
-    assert "Ficha técnica" not in r.text
+    assert "Ficha técnica" in r.text and "320D" in r.text
     assert "Agregar al carrito" in r.text

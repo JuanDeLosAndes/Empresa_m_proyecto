@@ -36,8 +36,10 @@ def test_admin_crea_edita_y_sube_imagenes(clientes):
         else:
             assert "data-abrir-alta" in respuesta.text
     datos = dict(marca="Prueba", modelo="Nueva", placa="PRUEBA-999", id_categoria=categoria,
-                 costo_por_hora=95000, capacidad="1 m3", descripcion="Equipo de prueba", disponible=True)
+                 ficha_tecnica={"Motor": "Diésel"}, costo_por_hora=95000, capacidad="1 m3", descripcion="Equipo de prueba", disponible=True)
     assert visitante.post("/admin/maquinas", json=datos, follow_redirects=False).status_code == 303
+    sin_ficha = {k: v for k, v in datos.items() if k != "ficha_tecnica"}
+    assert admin.post("/admin/maquinas", json=sin_ficha).status_code == 422
     r = admin.post("/admin/maquinas", json=datos)
     assert r.status_code == 201, r.text
     ident = r.json()["id_maquinaria"]
@@ -48,6 +50,8 @@ def test_admin_crea_edita_y_sube_imagenes(clientes):
     maquina = MaquinariaModel.obtener_por_id(ident)
     assert (maquina.costo_por_hora, maquina.capacidad, maquina.descripcion, maquina.disponible) == (125000, "2 m3", "Actualizada", False)
     assert admin.post("/api/carrito/items", json={"id_maquinaria": ident}).status_code == 409
+    assert maquina.ficha_tecnica == {"Motor": "Diésel"}
+    assert "Diésel" in visitante.get(f"/maquina/{ident}").text
     assert "No disponible" in visitante.get(f"/maquina/{ident}").text
     assert 'id="form-editar-maquina"' not in visitante.get(f"/maquina/{ident}").text
     pagina = admin.get(f"/maquina/{ident}").text

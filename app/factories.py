@@ -109,3 +109,9 @@ def crear_consulta_pagos() -> ConsultaPagosModel:
 
 def crear_pagos() -> PagosModel:
     return PagosModel(PagoRepositorioSQL(), Wompi(ConfiguracionWompi.desde_entorno()))
+
+
+
+
+
+

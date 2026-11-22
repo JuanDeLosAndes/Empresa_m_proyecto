@@ -34,6 +34,19 @@ def pytest_sessionfinish(session, exitstatus):
 
         MongoConnection()._client.drop_database(_NOMBRE_DB)
 
+    from app import database
+
+    instancia = database.Database._instance
+    if instancia is not None:
+        conexion = getattr(instancia._local, "connection", None)
+        if conexion is not None:
+            conexion.close()
+            del instancia._local.connection
+
+    import gc
+
+    gc.collect()
+
 
 import pytest
 
