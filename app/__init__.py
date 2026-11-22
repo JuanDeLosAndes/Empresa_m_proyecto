@@ -16,6 +16,7 @@ from app.controllers import (
     carrito_controller,
     home_controller,
     media_controller,
+    recursos_web_controller,
 )
 from app.controllers import afiliacion_controller, cotizacion_controller, pago_controller, diagnostico_controller
 from app.database import init_db
@@ -46,6 +47,8 @@ def create_app() -> FastAPI:
     init_db()
     seed_demo_data()
 
+    # La ruta específica conserva los enlaces existentes a las imágenes en MongoDB.
+    app.include_router(recursos_web_controller.router)
     app.mount(
         "/static",
         StaticFiles(directory=str(BASE_DIR / "static")),

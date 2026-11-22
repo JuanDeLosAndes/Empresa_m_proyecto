@@ -1,0 +1,65 @@
+{
+  "hero/fondo2.png": {
+    "paquete": "hero/fondo2.webp",
+    "tipo": "image/webp",
+    "bytes": 89744,
+    "sha256": "8d5b65cdfc7be094feff13e542b952f1a24618023b2903b1496c966cc66e6325",
+    "original": "e98f84a2f6db263686d52a7c69733fba2c3da239466dbf279387084026359519"
+  },
+  "hero/hero-excavadora.png": {
+    "paquete": "hero/hero-excavadora.webp",
+    "tipo": "image/webp",
+    "bytes": 249508,
+    "sha256": "3cb6fa000743f11cde696d3b1e71337e9936599440e4160517da6bdc9178f59b",
+    "original": "6b6ab7b806dffd166bec9b59edcfbcc79ff65ad956924600c45227748f0edeaf"
+  },
+  "hero/planchoin.png": {
+    "paquete": "hero/planchoin.webp",
+    "tipo": "image/webp",
+    "bytes": 16316,
+    "sha256": "3cbc502b262d247cfde2ecadc021f386af624495a7b4fe30bb2d8e6847083cc5",
+    "original": "fe9c597d9ff1d05a99aa71ce26fcbae2414a3eaec14d5c73ea9e3cbb388817fa"
+  },
+  "hero/planchon.jpeg": {
+    "paquete": "hero/planchon.webp",
+    "tipo": "image/webp",
+    "bytes": 200606,
+    "sha256": "bbbae94657ebc2a3d6b8ee56733c2bd3a9f02a82763d2451f5c98352517d1c61",
+    "original": "38e46a77ba97936dc0064f7d0a64f824988ec8b3472de63dd8f582111fb8eb14"
+  },
+  "hero/retro.jpeg": {
+    "paquete": "hero/retro.webp",
+    "tipo": "image/webp",
+    "bytes": 205042,
+    "sha256": "bea8852baf956307fda7fdf3c5ef169494d7640cb3c78c84385d79c504ebf841",
+    "original": "6193d6bdde5250bb3ddbcf6fcbaeffa3aacffafb1e4eef753f82b56689f5520c"
+  },
+  "hero/retroex.jpg": {
+    "paquete": "hero/retroex.webp",
+    "tipo": "image/webp",
+    "bytes": 570104,
+    "sha256": "0892879e291b74f7e0030338707759cd8cc7f86a2f9082942425e57c81619394",
+    "original": "fb9c548ef4671bce840e4605f6e417e3dad29a8e7675c3991a702f2e3ccdbddd"
+  },
+  "hero/retrox.png": {
+    "paquete": "hero/retrox.webp",
+    "tipo": "image/webp",
+    "bytes": 31994,
+    "sha256": "b033fabaccc26ac6f9c2028c6b56f86d72ec519f93a321d57624e3aeb46a9ef8",
+    "original": "29aec96cd5e02ae1353798f92b18d375daa711d79062b781b1bcb5418eac53c2"
+  },
+  "logo/logo-msps.png": {
+    "paquete": "logo/logo-msps.png",
+    "tipo": "image/png",
+    "bytes": 2263914,
+    "sha256": "7460df40ca99a08f75c75d53cb56f2c77b08e4c1155c4b3f1c8893d398a86e9c",
+    "original": "7460df40ca99a08f75c75d53cb56f2c77b08e4c1155c4b3f1c8893d398a86e9c"
+  },
+  "sin-foto.svg": {
+    "paquete": "sin-foto.svg",
+    "tipo": "image/svg+xml",
+    "bytes": 473,
+    "sha256": "1c9187e2bfd1a71c690262388b10f088c9a757433350cd8c72a5c9cfa8d1b517",
+    "original": "1c9187e2bfd1a71c690262388b10f088c9a757433350cd8c72a5c9cfa8d1b517"
+  }
+}

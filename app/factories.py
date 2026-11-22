@@ -1,11 +1,17 @@
 from __future__ import annotations
 
+from functools import lru_cache
+
 import os
 import threading
 from typing import Optional
 
 from fastapi import Request
 
+from pymongo.errors import PyMongoError
+
+from app.models.recursos_web import RecursoWeb, RecursoWebNoDisponible
+from app.repositories.recurso_web_repository import RecursosWebMongo
 from app.models.pagos import ConsultaPagosModel, PagosModel
 from app.pagos.wompi import ConfiguracionWompi, Wompi
 from app.repositories.pago_repository import PagoRepositorioSQL
@@ -110,6 +116,15 @@ def crear_consulta_pagos() -> ConsultaPagosModel:
 def crear_pagos() -> PagosModel:
     return PagosModel(PagoRepositorioSQL(), Wompi(ConfiguracionWompi.desde_entorno()))
 
+
+@lru_cache(maxsize=16)
+def leer_imagen_web(recurso: RecursoWeb) -> bytes:
+    """Las versiones son inmutables y solo el catálogo público entra en la caché."""
+    try:
+        repositorio = RecursosWebMongo(get_mongo_database())
+    except PyMongoError as error:
+        raise RecursoWebNoDisponible("Revisa la conexión con MongoDB.") from error
+    return repositorio.leer(recurso)
 
 
 
