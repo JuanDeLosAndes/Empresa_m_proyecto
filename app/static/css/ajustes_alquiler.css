@@ -1,0 +1,47 @@
+.topbar .topbar__brand {
+    display: flex;
+    width: clamp(176px, 24vw, 300px);
+    max-width: 100%;
+    min-width: 0;
+    height: auto;
+    aspect-ratio: 3.8 / 1;
+    align-items: stretch;
+    border-radius: 8px;
+}
+.topbar .topbar__brand img.topbar__logo {
+    display: block;
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    object-fit: cover;
+    object-position: center 46%;
+    margin: 0;
+    padding: 0;
+    transform: none;
+    clip-path: none;
+    border-radius: inherit;
+}
+html[data-tema="noche"] .topbar .topbar__brand img.topbar__logo {
+    background: #f8f6f3;
+    padding: 2px 4px;
+}
+.acceso-enlace { display: block; background: transparent; border: 0; padding: 0; color: inherit; font: inherit; text-align: start; cursor: pointer; }
+.footer__links .acceso-enlace { color: #c8c3bf; }
+:is(.auth-panel__form,.admin-form,#modal-cotizacion) [aria-invalid="true"] { border: 2px solid #ba3141; outline-color: #ba3141; background: #fff4f4; color: #302121; }
+.campo-error { display: block; margin: .35rem .5rem 0; font: inherit; font-size: .84rem; line-height: 1.4; color: #a42136; }
+.campo-error:empty { display: none; }
+html[data-tema="noche"] .campo-error { color: #ffb1b8; }
+html[data-tema="noche"] :is(.auth-panel__form,.admin-form,#modal-cotizacion) [aria-invalid="true"] { border-color: #ff939f; outline-color: #ff939f; background: #40292d; color: #fff0ef; }
+html[data-tema="noche"] .detalle-caracteristicas,
+html[data-tema="noche"] .detalle-caracteristicas .ficha-tabla td,
+html[data-tema="noche"] .carrito-container :is(.carrito-item,.carrito-resumen,.carrito-vacio) {
+    background: var(--superficie); color: var(--tinta); border-color: var(--borde);
+}
+html[data-tema="noche"] .detalle-caracteristicas .ficha-tabla th,
+html[data-tema="noche"] .carrito-container :is(.btn-seguir,.resumen-total,.horas-input,select) {
+    background: var(--suave); color: var(--tinta); border-color: var(--borde);
+}
+html[data-tema="noche"] .carrito-container :is(a,.total-precio) { color: #ffb07c; }
+html[data-tema="noche"] .carrito-container .carrito-foto img { background: var(--suave); }
+.unidad-alquiler { padding: .4rem .65rem; border: 1px solid var(--borde); border-radius: .45rem; color: var(--tinta); background: var(--superficie); font: inherit; }
