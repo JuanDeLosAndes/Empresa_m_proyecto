@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="/static/css/ajustes_interfaz.css?v=20261115c">
     {% block estilos_pagina %}{% endblock %}
     <link rel="stylesheet" href="/static/css/apariencia.css">
+    <link rel="stylesheet" href="/static/css/ajustes_alquiler.css">
     <script src="/static/js/tema.js"></script>
 </head>
 <body>
@@ -27,6 +28,7 @@
 
     {% include "components/footer.html" %}
 
+    <script src="/static/js/validacion_campos.js" defer></script>
     <script src="/static/js/main.js" defer></script>
 
     {% if sesion and sesion.tipo == 'administrador' %}

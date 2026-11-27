@@ -9,12 +9,12 @@
             <input type="hidden" name="token" value="{{ token }}">
             {% if accion == 'restablecer' %}
             <label class="auth-field">Nueva contraseña<input type="password" name="contrasena" required {% include "components/auth/clave_atributos.html" %}></label>
-            <small>Incluye al menos 8 números, una mayúscula y un símbolo (máximo 256 caracteres).</small>
+            <small>Usa de 8 a 256 caracteres, con al menos una mayúscula y un símbolo.</small>
             {% endif %}
             <button class="auth-field--submit" type="submit">{{ 'Guardar contraseña' if accion == 'restablecer' else 'Confirmar mi correo' }}</button>
         </form>
         {% endif %}
-        <div class="auth-panel__links"><a href="/?acceso=login">Iniciar sesión</a></div>
+        {% if not sesion %}<div class="auth-panel__links"><button type="button" class="acceso-enlace" data-auth-trigger="login">Iniciar sesión</button></div>{% endif %}
     </div>
 </section>
 {% endblock %}

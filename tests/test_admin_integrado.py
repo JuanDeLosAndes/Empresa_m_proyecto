@@ -71,7 +71,7 @@ def test_admin_crea_edita_y_sube_imagenes(clientes):
 
 def test_persona_no_puede_editar_y_acceso_comun(clientes):
     admin, usuario = clientes
-    UsuarioModel.crear_persona_natural(nombre="persona43", cedula="test-43", correo="p43@example.org", contrasena="prueba")
+    UsuarioModel.crear_persona_natural(nombre="persona43", cedula="1010101043", correo="p43@example.org", contrasena="prueba")
     usuario.post("/login", data=dict(identificador="p43@example.org", contrasena="prueba"))
     maquina = MaquinariaModel.listar()[0]
     datos = dict(costo_por_hora=1, capacidad="", descripcion="", disponible=True)

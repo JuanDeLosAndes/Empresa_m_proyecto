@@ -6,6 +6,8 @@ from dataclasses import replace
 
 from pymongo.errors import PyMongoError
 
+from app.models.almacen import AlmacenNoDisponible
+
 from app.catalogo_maquinas import TARIFAS_COP_POR_HORA, construir_catalogo
 from app.database import motor, transaccion
 from app.documentos.store import ejecutar_mongo
@@ -59,23 +61,17 @@ def seed_catalogo_real(*, sembrar_sql: bool = True) -> None:
         )
     try:
         _sembrar_mongo(catalogo)
-    except PyMongoError as error:
+    except (PyMongoError, AlmacenNoDisponible) as error:
         logger.error(
             "No se pudo cargar el catálogo en MongoDB (revisa MONGODB_URI): %s", type(error).__name__
         )
 
 
 def _sembrar_mongo(catalogo) -> None:
-    """Crea en MongoDB la ficha técnica de cada máquina que todavía no la tenga.
 
-    Las FOTOS no se siembran: las gestiona el administrador desde /admin/maquinas y
-    viven únicamente en MongoDB (GridFS). Por eso el seed nunca pisa un documento
-    que ya existe: así no borra las fotos ni las ediciones que haya hecho el admin.
-    """
     candado = crear_candado_repositorio()  # Factory Method
     if not ejecutar_mongo(lambda: candado.adquirir("seed_catalogo")):
-        # Otro proceso (p. ej. el padre/hijo de uvicorn --reload) ya está cargando el
-        # catálogo: no se compite con él.
+
         logger.info("Otro proceso está cargando el catálogo en MongoDB; se omite aquí.")
         return
     try:
@@ -88,8 +84,7 @@ def _sembrar_mongo(catalogo) -> None:
 
 
 def seed_demo_data() -> None:
-    # Tras importar un catálogo en PostgreSQL, no volver a crear máquinas
-    # predefinidas que el administrador pudo haber eliminado.
+
     with transaccion() as db:
         catalogo_existente = bool(db.execute("SELECT 1 FROM maquinarias LIMIT 1").fetchone())
     sembrar_sql = motor() != "postgresql" or not catalogo_existente

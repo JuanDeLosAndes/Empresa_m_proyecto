@@ -18,10 +18,33 @@ def test_rechaza_correo(correo):
         validar_correo(correo)
 
 
-@pytest.mark.parametrize("clave", ["Ab2!", "todoenminuscula8!", "SinSimbolo8", "Con espacio 8", "Faltan1234567!", "12345678abc!", "12345678Abc"])
+@pytest.mark.parametrize("clave", ["Ab2!", "todoenminuscula8!", "SinSimbolo8", "Con espacio 8", "Corta1!", "12345678abc!", "12345678Abc"])
 def test_rechaza_clave(clave):
     with pytest.raises(ValueError):
         validar_contrasena(clave)
+
+
+def test_clave_de_ocho_caracteres_sin_numeros():
+    validar_contrasena("Maquina!")
+
+
+@pytest.mark.parametrize("telefono", ["3g15", "tres", "315 001", "１２３", "+", "1" * 41])
+def test_telefono_invalido_impide_enviar_correo(telefono):
+    from app.models.credenciales import CampoInvalido
+    from app.models.registro_verificado import solicitar
+
+    enviar = Mock()
+    with pytest.raises(CampoInvalido) as error:
+        solicitar("persona", "Ana", "ana@example.org", "Maquina!", "123456", telefono=telefono, enviar=enviar)
+    assert error.value.campo == "telefono"
+    enviar.assert_not_called()
+
+
+def test_telefono_opcional_conserva_ceros():
+    from app.models.credenciales import validar_telefono
+
+    assert validar_telefono("") is None
+    assert validar_telefono("0315551234") == "0315551234"
 
 
 def test_ficha_requerida():
@@ -90,7 +113,9 @@ def test_transporte_construye_enlaces_separados(monkeypatch):
         enviar("entrada@example.org", "prueba-token")
         mensaje = conexion.send_message.call_args.args[0]
         assert mensaje["To"] == "entrada@example.org"
-        assert f"https://msps.example.org/{ruta}?token=prueba-token" in mensaje.get_content()
+        assert f"https://msps.example.org/{ruta}?token=prueba-token" in mensaje.get_body(preferencelist=("plain",)).get_content()
+        html = mensaje.get_body(preferencelist=("html",)).get_content()
+        assert "<h1>" in html and f'href="https://msps.example.org/{ruta}?token=prueba-token"' in html
     assert conexion.starttls.call_count == conexion.login.call_count == 2
 
 
@@ -114,3 +139,22 @@ def test_token_de_registro_no_restablece_clave(motor_sql):
     registro_verificado.confirmar(token)
     with pytest.raises(ValueError):
         registro_verificado.confirmar(token)
+
+
+@pytest.mark.parametrize("cedula", ["123a567", "ABC", "123.456", "１２３４", "12345678901", "", "00000"])
+def test_cedula_invalida_impide_solicitar_correo(cedula):
+    from app.models.registro_verificado import solicitar
+    from app.models.credenciales import CampoInvalido
+
+    enviar = Mock()
+    with pytest.raises(CampoInvalido) as error:
+        solicitar("persona", "Ana", "ana@example.org", "Prueba12345678!", cedula, enviar=enviar)
+    assert error.value.campo == "cedula"
+    enviar.assert_not_called()
+
+
+@pytest.mark.parametrize("cedula", ["12345", "12345678", "1020304050"])
+def test_cedula_numerica_se_conserva(cedula):
+    from app.models.credenciales import validar_cedula
+
+    assert validar_cedula(cedula) == cedula

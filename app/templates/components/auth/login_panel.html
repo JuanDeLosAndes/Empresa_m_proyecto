@@ -29,7 +29,7 @@
     <button type="button" class="auth-panel__close" data-auth-close aria-label="Cerrar">×</button>
     <h3>Recuperar contraseña</h3>
     <form action="/recuperar" method="post" class="auth-panel__form">
-        <label class="auth-field">Correo registrado<input name="correo" type="email" autocomplete="email" required></label>
+        <label class="auth-field">Correo registrado<input name="correo" type="email" autocomplete="email" pattern="[^@\s]+@[^@\s]+\.[^@\s]+" maxlength="254" required></label>
         <button class="auth-field--submit">Enviar enlace</button>
     </form>
     <div class="auth-panel__links"><a href="#" data-auth-switch="login">Volver al inicio de sesión</a></div>

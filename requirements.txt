@@ -12,3 +12,7 @@ itsdangerous
 psycopg[binary,pool]>=3.2,<4
 certifi
 email-validator>=2,<3
+markdown-it-py>=3,<5
+pytest
+mongomock
+playwright

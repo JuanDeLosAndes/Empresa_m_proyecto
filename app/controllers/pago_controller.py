@@ -10,7 +10,8 @@ from app.views.builders import PageContextBuilder
 from app.controllers.dependencias import exigir_sesion, exigir_admin
 from app.controllers.sesion import SesionActual, obtener_sesion_actual
 from app.factories import crear_carrito, crear_consulta_pagos, crear_pagos
-from app.models.registro_verificado import validar_correo
+from app.models.credenciales import validar_correo
+from app.models.carrito import CarritoModel
 from app.pagos.wompi import PagosNoConfigurados, ProveedorNoDisponible
 from app.views.templating import templates
 
@@ -40,9 +41,9 @@ def _pedido_autorizado(referencia, sesion):
         raise HTTPException(404, str(error)) from None
 
 
-def _pagina_checkout(request, sesion, error="", status=200):
+def _pagina_checkout(request, sesion, carrito, error="", status=200):
     contexto = _contexto(request, sesion, "Confirmar pago · MSPS")
-    resumen = crear_carrito(request).resumen()
+    resumen = carrito.resumen()
     correo = sesion.get("correo") or ""
     habilitado, ambiente = False, "test"
     try:
@@ -57,27 +58,27 @@ def _pagina_checkout(request, sesion, error="", status=200):
 
 
 @router.get("/checkout")
-def checkout(request: Request):
+def checkout(request: Request, carrito: CarritoModel = Depends(crear_carrito)):
     sesion = obtener_sesion_actual(request)
     if not sesion:
         return RedirectResponse("/?acceso=login", status_code=303)
-    return _pagina_checkout(request, sesion)
+    return _pagina_checkout(request, sesion, carrito)
 
 
 @router.post("/pagos/checkout")
 def iniciar_pago(request: Request, csrf: str = Form(...), correo: str = Form(...),
-                 sesion: SesionActual = Depends(exigir_sesion)):
+                 sesion: SesionActual = Depends(exigir_sesion),
+                 carrito: CarritoModel = Depends(crear_carrito)):
     _validar_csrf(request, csrf)
     try:
         correo = validar_correo(correo)
-        carrito = crear_carrito(request)
         resumen = carrito.resumen_para_pago()
         modelo = crear_pagos()
         pedido = modelo.preparar(sesion, correo, resumen)
     except ValueError as error:
-        return _pagina_checkout(request, sesion, str(error), 400)
+        return _pagina_checkout(request, sesion, carrito, str(error), 400)
     except PagosNoConfigurados:
-        return _pagina_checkout(request, sesion, "Los pagos en línea aún no están habilitados. Contacta al equipo.", 503)
+        return _pagina_checkout(request, sesion, carrito, "Los pagos en línea aún no están habilitados. Contacta al equipo.", 503)
     request.session["ultimo_pedido"] = pedido["referencia"]
     return RedirectResponse(modelo.url_checkout(pedido), status_code=303)
 
@@ -135,7 +136,8 @@ def estado_pago(referencia: str, sesion: SesionActual = Depends(exigir_sesion)):
 
 @router.post("/pagos/{referencia}/limpiar-carrito")
 def retirar_pagados(referencia: str, request: Request, csrf: str = Form(...),
-                    sesion: SesionActual = Depends(exigir_sesion)):
+                    sesion: SesionActual = Depends(exigir_sesion),
+                    carrito: CarritoModel = Depends(crear_carrito)):
     _validar_csrf(request, csrf)
     try:
         lineas = crear_consulta_pagos().lineas_pagadas(referencia, sesion)
@@ -143,7 +145,7 @@ def retirar_pagados(referencia: str, request: Request, csrf: str = Form(...),
         raise HTTPException(404, str(error)) from None
     except ValueError as error:
         raise HTTPException(409, str(error)) from None
-    crear_carrito(request).retirar_pagados(lineas)
+    carrito.retirar_pagados(lineas)
     return RedirectResponse("/carrito", status_code=303)
 
 

@@ -1,32 +1,20 @@
-
 from __future__ import annotations
 
 import threading
 import time
 from collections import OrderedDict
-from typing import Callable, Optional, Protocol
+from typing import Callable, Optional
 
-from app.repositories.imagen_maquina_repository import (
+from app.documentos.imagen import (
+    AlmacenImagenes,
     ImagenBinaria,
-    ImagenesEscritor,
-    ImagenesLector,
 )
 
 CACHE_BYTES_POR_DEFECTO = 32 * 1024 * 1024  # 32 MB: sobra para las ~22 fotos (~6 MB)
 CACHE_TTL_POR_DEFECTO = 300.0  # segundos que una foto puede vivir en memoria
 
 
-class AlmacenImagenes(Protocol):
-    """Lo que el proxy necesita del objeto real (ImagenesGridFS ya lo cumple)."""
-
-    def obtener(self, archivo: str) -> Optional[ImagenBinaria]: ...
-
-    def guardar(self, archivo: str, contenido: bytes, tipo_contenido: str = "image/jpeg") -> bool: ...
-
-    def eliminar(self, archivo: str) -> None: ...
-
-
-class ImagenesProxyConCache(ImagenesLector, ImagenesEscritor):
+class ImagenesProxyConCache(AlmacenImagenes):
     """Proxy (patrón estructural): misma interfaz que ImagenesGridFS, pero con caché LRU."""
 
     def __init__(
@@ -110,4 +98,3 @@ class ImagenesProxyConCache(ImagenesLector, ImagenesEscritor):
             antigua, (viejo, _) = next(iter(self._cache.items()))
             del self._cache[antigua]
             self._bytes -= len(viejo.contenido)
-

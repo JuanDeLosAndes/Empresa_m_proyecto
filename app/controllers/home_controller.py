@@ -1,34 +1,24 @@
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 
 from app.views.builders import PageContextBuilder
 from app.controllers.sesion import obtener_sesion_actual
-from app.factories import crear_catalogo_fotos
+from app.factories import crear_carrito, crear_catalogo_fotos
 from app.views.mensajes import mensaje_de_fotos
-from app.models.carrito import LineaCarrito
-from app.models.catalogo_fotos import ImagenCategoria
+from app.models.carrito import (
+    CarritoModel, MaquinaNoEncontrada, MaquinaNoDisponible, RequiereCotizacion,
+)
 from app.models.categoria import CategoriaModel
-from app.models.maquinaria import MaquinariaModel, filas_tecnicas
+from app.models.maquinaria import MaquinariaModel
+from app.views.maquinas import filas_tecnicas, urls_de_imagenes
 from app.views.templating import templates
 
 router = APIRouter()
 
 
-def _urls_de_imagenes(request: Request, imagenes: dict[str, ImagenCategoria]) -> dict[str, dict]:
-    """Traduce lo que decidió el Modelo (origen + ruta) a la URL que pinta la plantilla."""
-    resultado: dict[str, dict] = {}
-    for nombre, imagen in imagenes.items():
-        if imagen.origen == "media":
-            url = request.url_for("imagen_maquina", archivo=imagen.ruta)
-        else:
-            url = request.url_for("static", path=imagen.ruta)
-        resultado[nombre] = {"url": url.path, "foto": imagen.es_foto}
-    return resultado
-
-
 @router.get("/")
 def home(request: Request):
     categorias = CategoriaModel.listar()
-    imagenes = _urls_de_imagenes(
+    imagenes = urls_de_imagenes(
         request,
         crear_catalogo_fotos().imagenes_por_categoria(
             [c.nombre_categoria for c in categorias], preferir_recorte=True
@@ -66,14 +56,16 @@ def buscar_maquinas(request: Request, categoria: str | None = None):
     context["categorias"] = CategoriaModel.listar()
     context["categoria_activa"] = categoria
     context["portadas"] = catalogo.portadas_por_placa()
-    context["imagenes_categoria"] = _urls_de_imagenes(
+    context["imagenes_categoria"] = urls_de_imagenes(
         request, catalogo.imagenes_por_categoria(sorted({m.nombre_categoria for m in maquinas}))
     )
     return templates.TemplateResponse(request, "buscar_maquinas.html", context)
 
 
 @router.get("/maquina/{id}")
-def detalle_maquina(request: Request, id: int):
+def detalle_maquina(
+    request: Request, id: int, carrito: CarritoModel = Depends(crear_carrito)
+):
     maquina = MaquinariaModel.obtener_por_id(id)
     if maquina is None:
         raise HTTPException(status_code=404, detail="Máquina no encontrada")
@@ -87,10 +79,17 @@ def detalle_maquina(request: Request, id: int):
         .build()
     )
     context["maquina"] = maquina
-    context["estimacion_inicial"] = LineaCarrito(maquina, 1).total if maquina.permite_alquiler_directo else None
+    try:
+        estimacion = carrito.estimar(id, 1)
+    except MaquinaNoEncontrada:
+        raise HTTPException(404, "Máquina no encontrada") from None
+    except (RequiereCotizacion, MaquinaNoDisponible):
+        context["estimacion_inicial"] = None
+    else:
+        context["estimacion_inicial"] = estimacion.total
     context["ficha"] = catalogo.ficha_de(maquina.placa)
     context["filas_tecnicas"] = filas_tecnicas(maquina, context["ficha"])
-    context["imagen_categoria"] = _urls_de_imagenes(
+    context["imagen_categoria"] = urls_de_imagenes(
         request, catalogo.imagenes_por_categoria([maquina.nombre_categoria])
     ).get(maquina.nombre_categoria)
     context["mensaje_fotos"] = mensaje_de_fotos(request.query_params)

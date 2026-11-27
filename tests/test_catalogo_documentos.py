@@ -1,9 +1,9 @@
-from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
 from pymongo.errors import ServerSelectionTimeoutError
 
+from app.models.almacen import AlmacenNoDisponible
 from app.catalogo_maquinas import construir_catalogo
 from app.documentos.fichas import FichaExcavadora, FichaTecnicaFactory
 from app.documentos.maquina_documento import MaquinaDocumentoBuilder
@@ -18,9 +18,6 @@ from app.repositories.maquina_documentos_repository import (
     MaquinaDocumentosLector,
     MaquinaDocumentosMongo,
 )
-
-SEMILLA = Path(__file__).resolve().parent.parent / "app" / "seed_data" / "imagenes_maquinas"
-
 
 @pytest.fixture
 def base_datos():
@@ -122,13 +119,6 @@ def test_placas_y_slugs_son_unicos():
     assert len({d.slug for d in docs}) == len(docs)
 
 
-@pytest.mark.skipif(not SEMILLA.exists(), reason="las fotos ya viven solo en MongoDB (carpeta semilla borrada)")
-def test_cada_imagen_del_catalogo_existe_en_la_carpeta_semilla():
-    for d in construir_catalogo():
-        for i in d.imagenes:
-            assert (SEMILLA / i.archivo).is_file(), i.archivo
-
-
 # ---------------- Repositorio de documentos (SOLID) ----------------
 def test_repositorio_cumple_las_interfaces_segregadas(repo, imagenes):
     assert isinstance(repo, MaquinaDocumentosLector)
@@ -171,7 +161,7 @@ def test_si_mongodb_cae_la_lectura_devuelve_vacio_en_vez_de_romper():
     assert r.obtener_por_placa("X") is None
     assert r.listar() == []
     assert r.portadas_por_placa() == {}
-    with pytest.raises(ServerSelectionTimeoutError):  # la escritura NO esconde el error
+    with pytest.raises(AlmacenNoDisponible):  # La escritura informa el fallo del almacenamiento.
         r.guardar(construir_catalogo()[0])
 
 

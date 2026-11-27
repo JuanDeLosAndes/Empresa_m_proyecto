@@ -1,3 +1,5 @@
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import RedirectResponse
 
@@ -5,11 +7,12 @@ from app.views.builders import PageContextBuilder
 from app.controllers.dependencias import exigir_sesion
 from app.controllers.sesion import SesionActual, obtener_sesion_actual
 from app.factories import crear_carrito, crear_catalogo_fotos
-from app.models.carrito import MaquinaNoEncontrada, RequiereCotizacion, MaquinaNoDisponible
+from app.models.carrito import CarritoModel, MaquinaNoEncontrada, RequiereCotizacion, MaquinaNoDisponible
 from pydantic import BaseModel, Field
 from app.views.templating import templates
 
 router = APIRouter()
+CarritoActual = Annotated[CarritoModel, Depends(crear_carrito)]
 
 
 class Horas(BaseModel):
@@ -25,9 +28,9 @@ class ItemNuevo(ItemId):
 
 
 @router.get("/api/maquinas/{id_maquinaria}/estimacion")
-def estimar(id_maquinaria: int, request: Request, horas: int = Query(ge=1, le=2_147_483_647)):
+def estimar(id_maquinaria: int, carrito: CarritoActual, horas: int = Query(ge=1, le=2_147_483_647)):
     try:
-        linea = crear_carrito(request).estimar(id_maquinaria, horas)
+        linea = carrito.estimar(id_maquinaria, horas)
     except MaquinaNoEncontrada:
         raise HTTPException(404, "Máquina no encontrada") from None
     except (RequiereCotizacion, MaquinaNoDisponible) as error:
@@ -42,18 +45,18 @@ def verificar_login(request: Request):
 
 
 @router.get("/api/carrito/cantidad")
-def cantidad_carrito(request: Request):
+def cantidad_carrito(request: Request, carrito: CarritoActual):
     """Devuelve cuántas máquinas hay en el carrito (0 si no hay sesión)"""
     if obtener_sesion_actual(request) is None:
         return {"cantidad": 0}
-    return {"cantidad": crear_carrito(request).contar()}
+    return {"cantidad": carrito.contar()}
 
 
 @router.post("/api/carrito/agregar", include_in_schema=False)
 @router.post("/api/carrito/items", responses={409: {"description": "Requiere cotización"}})
-def agregar_carrito(request: Request, data: ItemNuevo, _: SesionActual = Depends(exigir_sesion)):
+def agregar_carrito(data: ItemNuevo, carrito: CarritoActual, _: SesionActual = Depends(exigir_sesion)):
     try:
-        crear_carrito(request).agregar(data.id_maquinaria, data.horas)
+        carrito.agregar(data.id_maquinaria, data.horas)
     except MaquinaNoEncontrada:
         raise HTTPException(404, "Máquina no encontrada")
     except (RequiereCotizacion, MaquinaNoDisponible) as error:
@@ -62,8 +65,7 @@ def agregar_carrito(request: Request, data: ItemNuevo, _: SesionActual = Depends
 
 
 @router.patch("/api/carrito/items/{id_maquinaria}")
-def actualizar_carrito(request: Request, id_maquinaria: int, data: Horas, _: SesionActual = Depends(exigir_sesion)):
-    carrito = crear_carrito(request)
+def actualizar_carrito(id_maquinaria: int, data: Horas, carrito: CarritoActual, _: SesionActual = Depends(exigir_sesion)):
     try:
         carrito.actualizar_horas(id_maquinaria, data.horas)
     except MaquinaNoEncontrada:
@@ -77,29 +79,29 @@ def actualizar_carrito(request: Request, id_maquinaria: int, data: Horas, _: Ses
 
 
 @router.delete("/api/carrito/items/{id_maquinaria}")
-def eliminar_carrito(request: Request, id_maquinaria: int, _: SesionActual = Depends(exigir_sesion)):
-    crear_carrito(request).eliminar(id_maquinaria)
+def eliminar_carrito(id_maquinaria: int, carrito: CarritoActual, _: SesionActual = Depends(exigir_sesion)):
+    carrito.eliminar(id_maquinaria)
     return {"status": "ok"}
 
 
 @router.post("/api/carrito/actualizar", include_in_schema=False)
-def actualizar_anterior(request: Request, data: ItemNuevo, sesion: SesionActual = Depends(exigir_sesion)):
-    return actualizar_carrito(request, data.id_maquinaria, Horas(horas=data.horas), sesion)
+def actualizar_anterior(data: ItemNuevo, carrito: CarritoActual, sesion: SesionActual = Depends(exigir_sesion)):
+    return actualizar_carrito(data.id_maquinaria, Horas(horas=data.horas), carrito, sesion)
 
 
 @router.post("/api/carrito/eliminar", include_in_schema=False)
-def eliminar_anterior(request: Request, data: ItemId, sesion: SesionActual = Depends(exigir_sesion)):
-    return eliminar_carrito(request, data.id_maquinaria, sesion)
+def eliminar_anterior(data: ItemId, carrito: CarritoActual, sesion: SesionActual = Depends(exigir_sesion)):
+    return eliminar_carrito(data.id_maquinaria, carrito, sesion)
 
 
 @router.get("/carrito")
-def ver_carrito(request: Request):
+def ver_carrito(request: Request, carrito: CarritoActual):
     """Muestra el carrito"""
     sesion = obtener_sesion_actual(request)
     if not sesion:
         return RedirectResponse(url="/?acceso=login", status_code=302)
 
-    resumen = crear_carrito(request).resumen()
+    resumen = carrito.resumen()
     context = (
         PageContextBuilder()
         .with_title("Mi Carrito")

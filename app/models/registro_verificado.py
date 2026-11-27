@@ -6,7 +6,7 @@ import time
 
 from collections.abc import Callable
 from app.database import ERRORES_INTEGRIDAD, transaccion
-from app.models.credenciales import validar_contrasena, validar_correo
+from app.models.credenciales import CampoInvalido, validar_cedula, validar_contrasena, validar_correo, validar_telefono
 from app.security import hash_password
 
 
@@ -14,7 +14,7 @@ def validar_nit(valor: str) -> str:
     # Formato empresarial elegido para este formulario: 9 dígitos y DV opcional.
     valor = valor.strip()
     if not re.fullmatch(r"(?:[0-9]{9}|[0-9]{3}\.[0-9]{3}\.[0-9]{3})(?:-[0-9])?|[0-9]{10}", valor):
-        raise ValueError("El NIT debe tener 9 números, con un dígito de verificación opcional. Ejemplo: 900123456-7.")
+        raise CampoInvalido("nit", "El NIT debe tener 9 números, con un dígito de verificación opcional. Ejemplo: 900123456-7.")
     digitos = valor.replace(".", "").replace("-", "")
     return digitos[:9]  # La identidad no depende de cómo se escribió el DV.
 
@@ -27,18 +27,16 @@ def comprobar_duplicados(db, tipo, datos):
         (correo, correo),
     ).fetchone()
     if existe:
-        raise ValueError("Ese correo ya está registrado. Inicia sesión.")
+        raise CampoInvalido("correo", "Ese correo ya está registrado. Inicia sesión.")
     if tipo == "persona":
-        duplicado = db.execute(
-            """SELECT 1 FROM usuarios WHERE nombre = ?
-               UNION ALL SELECT 1 FROM personas_naturales WHERE cedula = ?""",
-            (datos["nombre"], datos["cedula"]),
-        ).fetchone()
+        if db.execute("SELECT 1 FROM usuarios WHERE nombre = ?", (datos["nombre"],)).fetchone():
+            raise CampoInvalido("usuario", "Ese usuario ya está registrado.")
+        if db.execute("SELECT 1 FROM personas_naturales WHERE cedula = ?", (datos["cedula"],)).fetchone():
+            raise CampoInvalido("cedula", "Esa cédula ya está registrada.")
     else:
         filas = db.execute("SELECT nit FROM empresas").fetchall()
-        duplicado = any(f["nit"].replace(".", "").replace("-", "")[:9] == datos["nit"] for f in filas)
-    if duplicado:
-        raise ValueError("Ya existe una cuenta con ese usuario, documento o NIT.")
+        if any(f["nit"].replace(".", "").replace("-", "")[:9] == datos["nit"] for f in filas):
+            raise CampoInvalido("nit", "Ese NIT ya está registrado.")
 
 
 def solicitar(tipo: str, nombre: str, correo: str, contrasena: str, documento: str,
@@ -46,21 +44,17 @@ def solicitar(tipo: str, nombre: str, correo: str, contrasena: str, documento: s
     correo = validar_correo(correo)
     validar_contrasena(contrasena)
     nombre = nombre.strip()
-    if not nombre or len(nombre) > 120 or not contrasena or len(contrasena) > 256:
-        raise ValueError("Revisa el nombre y la contraseña.")
+    if not nombre or len(nombre) > 120:
+        raise CampoInvalido("usuario" if tipo == "persona" else "nombre_empresa", "Escribe un nombre de hasta 120 caracteres.")
     datos = {"nombre": nombre, "correo": correo}
     if tipo == "empresa":
         if len(direccion.strip()) > 250:
-            raise ValueError("La dirección admite hasta 250 caracteres.")
+            raise CampoInvalido("direccion", "La dirección admite hasta 250 caracteres.")
         datos["direccion"] = direccion.strip() or None
         datos["nit"] = validar_nit(documento)
     elif tipo == "persona":
-        documento = documento.strip()
-        if not documento or len(documento) > 30:
-            raise ValueError("Revisa el documento de identidad.")
-        if len(telefono.strip()) > 40:
-            raise ValueError("El teléfono admite hasta 40 caracteres.")
-        datos["telefono"] = telefono.strip() or None
+        documento = validar_cedula(documento)
+        datos["telefono"] = validar_telefono(telefono)
         datos["cedula"] = documento
     else:
         raise ValueError("Tipo de cuenta inválido.")

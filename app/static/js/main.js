@@ -1,11 +1,15 @@
-
+/**
+ * MSPS - interacción del navbar: mini pestañas de "Iniciar sesion" y
+ * "Registrarse", incluyendo el paso previo de elegir tipo de cuenta
+ * (persona natural / empresa) dentro del panel de registro.
+ */
 (function () {
     "use strict";
 
     const authRoot = document.querySelector("[data-auth-root]");
     if (!authRoot) return;
 
-    const triggers = authRoot.querySelectorAll("[data-auth-trigger]");
+    const triggers = document.querySelectorAll("[data-auth-trigger]");
     const panels = authRoot.querySelectorAll("[data-auth-panel]");
     const registerViews = authRoot.querySelectorAll("[data-register-view]");
 
@@ -20,6 +24,7 @@
         const panel = authRoot.querySelector(`[data-auth-panel="${name}"]`);
         if (panel) {
             panel.hidden = false;
+            panel.querySelector("button, input")?.focus();
         }
     }
 
@@ -51,6 +56,7 @@
             event.preventDefault();
             const boton = form.querySelector('button');
             const estado = form.closest('.auth-panel').querySelector('[data-estado]');
+            if (!form.reportValidity()) return;
             boton.disabled = true;
             estado.textContent = '';
             try {
@@ -59,7 +65,16 @@
                 });
                 const datos = await respuesta.json();
                 if (!respuesta.ok) {
-                    estado.textContent = datos.mensaje || 'Revisa los campos e intenta de nuevo.';
+                    const campo = datos.campo && form.elements.namedItem(datos.campo);
+                    if (campo) {
+                        campo.setCustomValidity(datos.mensaje);
+                        campo.reportValidity();
+                    } else {
+                        estado.textContent = datos.mensaje || 'Revisa los campos e intenta de nuevo.';
+                        if (respuesta.status === 401) {
+                            form.querySelectorAll('input').forEach(input => input.setAttribute('aria-invalid', 'true'));
+                        }
+                    }
                 } else if (form.getAttribute('action') === '/login') {
                     location.reload();
                 } else {
@@ -97,12 +112,12 @@
         });
     });
 
-
+    // Cerrar con el botón "x"
     authRoot.querySelectorAll("[data-auth-close]").forEach((btn) => {
         btn.addEventListener("click", closeAllPanels);
     });
 
-
+    // Saltar entre login <-> registro desde los enlaces internos
     authRoot.querySelectorAll("[data-auth-switch]").forEach((link) => {
         link.addEventListener("click", (event) => {
             event.preventDefault();
@@ -135,7 +150,6 @@
             closeAllPanels();
         }
     });
-
 
     const params = new URLSearchParams(window.location.search);
     if (params.get("registro") === "ok") {

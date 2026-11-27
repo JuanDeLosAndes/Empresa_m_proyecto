@@ -137,12 +137,3 @@ class MaquinariaModel:
 def validar_tarifa(valor: float) -> None:
     if not math.isfinite(valor) or valor < 0:
         raise ValueError("El precio debe ser un número mayor o igual a cero")
-
-def filas_tecnicas(maquina, documento):
-    if maquina.ficha_tecnica:
-        return [{"etiqueta": k, "valor": v} for k, v in maquina.ficha_tecnica.items()]
-    if documento and documento.cuadro_info:
-        return documento.cuadro_info
-    datos = {"Marca": maquina.marca, "Modelo": maquina.modelo, "Categoría": maquina.nombre_categoria,
-             "Placa": maquina.placa, "Capacidad": maquina.capacidad, "Descripción": maquina.descripcion}
-    return [{"etiqueta": k, "valor": v} for k, v in datos.items() if v]

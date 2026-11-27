@@ -30,8 +30,12 @@
 
                     <!-- CANTIDAD DE HORAS -->
                     <div class="carrito-cantidad">
-                        <label>Horas de alquiler:</label>
-                        <input type="number" min="1" value="{{ item.horas }}" class="horas-input" data-id="{{ item.maquina.id_maquinaria }}" aria-label="Horas para {{ item.maquina.placa }}">
+                        <label for="cantidad-{{ item.maquina.id_maquinaria }}">Cantidad de alquiler</label>
+                        <select class="unidad-alquiler" aria-label="Unidad de alquiler para {{ item.maquina.placa }}">
+                        <option value="1">Horas</option>
+                        <option value="24">Días (24 horas)</option>
+                    </select>
+                        <input id="cantidad-{{ item.maquina.id_maquinaria }}" type="number" required min="1" max="2147483647" value="{{ item.horas }}" class="horas-input" data-id="{{ item.maquina.id_maquinaria }}" aria-label="Cantidad para {{ item.maquina.placa }}">
                     </div>
                 </div>
 

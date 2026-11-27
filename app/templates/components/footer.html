@@ -28,8 +28,8 @@
         <h4>Enlaces</h4>
         <a href="/">Inicio</a>
         <a href="/maquinas">Buscar máquina</a>
-        {% if not sesion %}<a href="/?acceso=login">Iniciar sesión</a>
-        <a href="/?acceso=registro">Registrarse</a>{% endif %}
+        {% if not sesion %}<button type="button" class="acceso-enlace" data-auth-trigger="login">Iniciar sesión</button>
+        <button type="button" class="acceso-enlace" data-auth-trigger="register">Registrarse</button>{% endif %}
     </div>
 
     <div class="footer__contact">

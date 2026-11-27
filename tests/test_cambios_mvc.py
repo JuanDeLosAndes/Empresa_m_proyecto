@@ -23,7 +23,7 @@ def cuenta(sitio, nombre, empresa=False):
         datos.update(nombre_empresa=nombre, nit={"Alquileres": "900123456", "Equipos": "900123457"}[nombre])
     else:
         ruta = "/registro/persona"
-        datos.update(usuario=nombre, cedula=nombre)
+        datos.update(usuario=nombre, cedula={"persona": "1020304050", "Andrea": "20304050"}[nombre])
     with patch("app.controllers.auth_controller.enviar_verificacion") as enviar:
         assert cliente.post(ruta, data=datos).status_code == 200
     correo, token = enviar.call_args.args

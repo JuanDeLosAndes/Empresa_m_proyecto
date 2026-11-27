@@ -13,6 +13,7 @@ from pymongo.database import Database
 from pymongo.errors import DuplicateKeyError, PyMongoError
 
 from app.documentos.store import ejecutar_mongo
+from app.models.almacen import AlmacenNoDisponible
 from app.documentos.maquina_documento import ImagenMaquina, MaquinaDocumento
 
 logger = logging.getLogger(__name__)
@@ -22,7 +23,10 @@ class MaquinaDocumentosLector(ABC):
     """Contrato de solo lectura."""
 
     @abstractmethod
-    def obtener_por_placa(self, placa: str) -> Optional[MaquinaDocumento]: ...
+    def obtener_por_placa(
+        self, placa: str, *, tolerar_fallo: bool = True
+    ) -> Optional[MaquinaDocumento]:
+        """La lectura pública admite degradación; la edición pide tolerar_fallo=False."""
 
     @abstractmethod
     def listar(self) -> list[MaquinaDocumento]: ...
@@ -75,6 +79,8 @@ def _escritura_mongo(metodo):
     def envoltura(self, *args, **kwargs):
         try:
             return ejecutar_mongo(lambda: metodo(self, *args, **kwargs))
+        except PyMongoError as error:
+            raise AlmacenNoDisponible("No se pudo escribir el documento de la máquina.") from error
         finally:
             with self._lock:
                 self._cache.clear()
@@ -112,9 +118,18 @@ class MaquinaDocumentosMongo(MaquinaDocumentosLector, MaquinaDocumentosEscritor)
         self._col.create_index("slug", unique=True)
         self._col.create_index("placa")
 
-    @_lectura_tolerante(lambda: None)
-    def obtener_por_placa(self, placa: str) -> Optional[MaquinaDocumento]:
-        fila = self._recordar(("ficha", placa), lambda: self._col.find_one({"placa": placa}, {"_id": 0}))
+    def obtener_por_placa(
+        self, placa: str, *, tolerar_fallo: bool = True
+    ) -> Optional[MaquinaDocumento]:
+        try:
+            fila = self._recordar(
+                ("ficha", placa), lambda: self._col.find_one({"placa": placa}, {"_id": 0})
+            )
+        except PyMongoError as error:
+            if tolerar_fallo:
+                logger.debug("Lectura omitida: %s", type(error).__name__)
+                return None
+            raise AlmacenNoDisponible("No se pudo leer el documento para editarlo.") from error
         return MaquinaDocumento.from_document(fila) if fila else None
 
     @_lectura_tolerante(list)

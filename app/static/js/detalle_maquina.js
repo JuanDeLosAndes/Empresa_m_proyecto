@@ -18,12 +18,12 @@ function decrementarHoras() {
 }
 
 function actualizarTotal() {
-    const horas = Number(inputHoras.value);
+    const horas = Number(inputHoras.value) * Number(unidadAlquiler.value);
     const etiqueta = document.getElementById('total-estimado');
     const version = ++versionEstimacion;
     clearTimeout(esperaEstimacion);
-    if (!Number.isSafeInteger(horas) || horas < 1) {
-        etiqueta.textContent = 'Escribe un número entero de horas mayor que cero.';
+    if (!inputHoras.validity.valid || !Number.isSafeInteger(horas) || horas < 1) {
+        etiqueta.textContent = 'Escribe una cantidad entera entre 1 y ' + inputHoras.max + '.';
         return;
     }
     etiqueta.textContent = 'Calculando…';
@@ -42,6 +42,11 @@ function actualizarTotal() {
 }
 
 const inputHoras = document.getElementById('cantidad-horas');
+const unidadAlquiler = document.querySelector('.detalle-cantidad .unidad-alquiler');
+if (unidadAlquiler) unidadAlquiler.addEventListener('change', () => {
+    inputHoras.max = Math.floor(2147483647 / Number(unidadAlquiler.value));
+    actualizarTotal();
+});
 if (inputHoras) inputHoras.addEventListener('input', actualizarTotal);
 
 // Galería: al pulsar una miniatura se cambia la imagen principal.
@@ -57,6 +62,7 @@ document.querySelectorAll('.detalle-miniatura').forEach(btn => {
 
 function agregarAlCarrito() {
     if (!inputHoras.reportValidity()) return;
+    const horas = Number(inputHoras.value) * Number(unidadAlquiler.value);
     fetch('/api/verificar-login', { method: 'GET', credentials: 'same-origin' })
         .then(res => res.json())
         .then(data => {
@@ -71,7 +77,7 @@ function agregarAlCarrito() {
                 credentials: 'same-origin',
                 body: JSON.stringify({
                     id_maquinaria: maquinaId,
-                    horas: Math.max(1, parseInt(document.getElementById('cantidad-horas').value) || 1)
+                    horas
                 })
             })
             .then(async res => {

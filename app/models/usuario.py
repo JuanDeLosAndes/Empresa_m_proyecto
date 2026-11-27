@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import Optional
 
 from app.database import transaccion
+from app.models.credenciales import validar_cedula, validar_telefono
 from app.security import hash_password, verify_password
 
 ROL_PERSONA_NATURAL = "persona_natural"
@@ -58,6 +59,8 @@ class UsuarioModel:
         id_empresa: Optional[int] = None,
     ) -> Usuario:
 
+        cedula = validar_cedula(cedula)
+        telefono = validar_telefono(telefono)
         with transaccion() as conn:
             cursor = conn.execute(
                 """INSERT INTO usuarios (nombre, contrasena_hash, id_empresa, id_rol)

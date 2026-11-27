@@ -2,7 +2,9 @@ import os
 import smtplib
 import ssl
 from email.message import EmailMessage
-from urllib.parse import urlparse
+from urllib.parse import urlencode, urlparse
+
+from markdown_it import MarkdownIt
 
 
 class CorreoNoDisponible(RuntimeError):
@@ -32,8 +34,12 @@ def _enviar(destino, asunto, ruta, token, instruccion):
     mensaje["From"] = remitente
     mensaje["To"] = destino
     mensaje["Subject"] = asunto + " · MSPS"
-    mensaje.set_content(f"{instruccion}\n\n{base}/{ruta}?token={token}\n\n"
-                        "El enlace vence en 30 minutos. Si no lo solicitaste, ignora este correo.")
+    enlace = f"{base}/{ruta}?" + urlencode({"token": token})
+    aviso = "El enlace vence en 30 minutos. Si no lo solicitaste, ignora este correo."
+    mensaje.set_content(f"{asunto} · MSPS\n\n{instruccion}\n\n{enlace}\n\n{aviso}")
+    accion = "Confirmar mi correo" if ruta == "verificar-correo" else "Elegir nueva contraseña"
+    contenido_md = f"# {asunto}\n\n{instruccion}\n\n[{accion}](<{enlace}>)\n\n{aviso}\n\n**Maquiservicio Pérez**"
+    mensaje.add_alternative(MarkdownIt("commonmark", {"html": False}).render(contenido_md), subtype="html")
     try:
         puerto = int(os.getenv("SMTP_PORT", "587"))
         contexto = ssl.create_default_context()

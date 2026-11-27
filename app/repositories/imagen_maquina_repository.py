@@ -4,7 +4,6 @@ import hashlib
 import functools
 import logging
 import math
-from abc import ABC, abstractmethod
 from typing import Optional
 
 import gridfs
@@ -12,7 +11,8 @@ from gridfs.errors import FileExists, GridFSError, NoFile
 from pymongo.database import Database
 from pymongo.errors import DuplicateKeyError, PyMongoError
 
-from app.documentos.imagen import ImagenBinaria
+from app.documentos.imagen import AlmacenImagenes, ImagenBinaria, ImagenesLector, ImagenesEscritor
+from app.models.almacen import AlmacenNoDisponible
 from app.documentos.store import ejecutar_mongo
 
 logger = logging.getLogger(__name__)
@@ -21,26 +21,14 @@ logger = logging.getLogger(__name__)
 def _limite_mongo(metodo):
     @functools.wraps(metodo)
     def envoltura(self, *args, **kwargs):
-        return ejecutar_mongo(lambda: metodo(self, *args, **kwargs))
+        try:
+            return ejecutar_mongo(lambda: metodo(self, *args, **kwargs))
+        except (GridFSError, PyMongoError) as error:
+            raise AlmacenNoDisponible("El almacenamiento de imágenes no respondió.") from error
     return envoltura
 
 
-class ImagenesLector(ABC):
-    @abstractmethod
-    def obtener(self, archivo: str) -> Optional[ImagenBinaria]: ...
-
-
-class ImagenesEscritor(ABC):
-    @abstractmethod
-    def guardar(self, archivo: str, contenido: bytes, tipo_contenido: str = "image/jpeg") -> bool:
-        """Sube o repara una foto. Devuelve True solo si hubo cambios."""
-
-    @abstractmethod
-    def eliminar(self, archivo: str) -> None:
-        """Borra la foto (registro y bloques). Si no existe, no hace nada."""
-
-
-class ImagenesGridFS(ImagenesLector, ImagenesEscritor):
+class ImagenesGridFS(AlmacenImagenes):
     def __init__(self, base_datos: Database) -> None:
         self._fs = gridfs.GridFS(base_datos)
         self._chunks = base_datos["fs.chunks"]
@@ -50,8 +38,8 @@ class ImagenesGridFS(ImagenesLector, ImagenesEscritor):
             return ejecutar_mongo(lambda: self._leer(archivo))
         except NoFile:
             return None
-        except (GridFSError, PyMongoError):
-            return None
+        except (GridFSError, PyMongoError) as error:
+            raise AlmacenNoDisponible("La imagen no pudo recuperarse del almacenamiento.") from error
 
     def _leer(self, archivo):
         salida = self._fs.get(archivo)
@@ -98,4 +86,3 @@ class ImagenesGridFS(ImagenesLector, ImagenesEscritor):
             logger.warning("Otro proceso subió %s al mismo tiempo; se revisará al reiniciar.", archivo)
             return False
         return True
-

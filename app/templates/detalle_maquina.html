@@ -69,7 +69,7 @@
             </button>
             {% if not maquina.disponible %}
             <button class="btn btn-carrito" disabled>No disponible</button>
-            {% elif maquina.permite_alquiler_directo %}
+            {% elif estimacion_inicial is not none %}
             <button class="btn btn-carrito" onclick="agregarAlCarrito()">
                 🛒 Agregar al carrito
             </button>
@@ -124,9 +124,13 @@
                     <span class="precio-valor">${{ "{:,.0f}".format(maquina.costo_por_hora) }} COP/hora</span>
                 </div>
 
-                {% if maquina.permite_alquiler_directo %}
+                {% if estimacion_inicial is not none %}
                 <div class="detalle-cantidad">
-                    <label for="cantidad-horas">Cantidad de horas:</label>
+                    <label for="cantidad-horas">Cantidad de alquiler:</label>
+                    <select class="unidad-alquiler" aria-label="Unidad de alquiler">
+                        <option value="1">Horas</option>
+                        <option value="24">Días (24 horas)</option>
+                    </select>
                     <div class="cantidad-input-group">
                         <button class="qty-btn" onclick="decrementarHoras()">−</button>
                         <input type="number" id="cantidad-horas" min="1" max="2147483647" required value="1" class="cantidad-input">
@@ -183,19 +187,19 @@
             <p id="estado-cotizacion" role="status"></p>
             <div class="form-group">
                 <label for="nombre">Nombre:</label>
-                <input type="text" id="nombre" name="nombre" required>
+                <input type="text" id="nombre" name="nombre" maxlength="120" required>
             </div>
             <div class="form-group">
                 <label for="email">Email:</label>
-                <input type="email" id="email" name="email" required>
+                <input type="email" id="email" name="email" maxlength="254" pattern="[^@\s]+@[^@\s]+\.[^@\s]+" required>
             </div>
             <div class="form-group">
                 <label for="telefono">Teléfono:</label>
-                <input type="tel" id="telefono" name="telefono" required>
+                <input type="tel" id="telefono" name="telefono" maxlength="24" pattern="\+?[0-9](?:[ \(\)\-]*[0-9]){6,14}" title="Escribe entre 7 y 15 dígitos. Puedes incluir el prefijo del país." required>
             </div>
             <div class="form-group">
                 <label for="mensaje">Mensaje:</label>
-                <textarea id="mensaje" name="mensaje" rows="4"></textarea>
+                <textarea id="mensaje" name="mensaje" maxlength="2000" rows="4"></textarea>
             </div>
             <button type="submit" class="btn btn-cotizar">Enviar Cotización</button>
         </form>

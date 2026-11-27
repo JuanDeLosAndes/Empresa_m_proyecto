@@ -3,6 +3,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Form, Request
 import logging
 
+from app.models.credenciales import CampoInvalido
 from app.models import registro_verificado, recuperacion
 from app.services.correo import CorreoNoDisponible, enviar_recuperacion, enviar_verificacion
 from app.views.builders import PageContextBuilder
@@ -21,9 +22,12 @@ def respuesta_json(request):
     return "application/json" in request.headers.get("accept", "")
 
 
-def pagina_estado(request, texto, token=None, status=200, accion="verificar"):
+def pagina_estado(request, texto, token=None, status=200, accion="verificar", campo=None):
     if respuesta_json(request):
-        return JSONResponse({"mensaje": texto}, status_code=status, headers={"Cache-Control": "no-store"})
+        datos = {"mensaje": texto}
+        if campo:
+            datos["campo"] = campo
+        return JSONResponse(datos, status_code=status, headers={"Cache-Control": "no-store"})
     contexto = PageContextBuilder().with_title("Verificar correo · MSPS").with_sesion(obtener_sesion_actual(request)).build()
     contexto.update(texto=texto, token=token, accion=accion)
     return templates.TemplateResponse(request, "verificar_correo.html", contexto, status_code=status,
@@ -34,7 +38,7 @@ def registrar(request, tipo, nombre, correo, contrasena, documento, **contacto):
     try:
         registro_verificado.solicitar(tipo, nombre, correo, contrasena, documento, enviar=enviar_verificacion, **contacto)
     except ValueError as error:
-        return pagina_estado(request, str(error), status=400)
+        return pagina_estado(request, str(error), status=400, campo=error.campo if isinstance(error, CampoInvalido) else None)
     except CorreoNoDisponible as error:
         return pagina_estado(request, str(error), status=503)
     return pagina_estado(request, "Revisa tu correo y la carpeta de spam. Abre el enlace y confirma para activar tu cuenta. El enlace vence en 30 minutos.")
@@ -62,7 +66,7 @@ def confirmar_correo(request: Request, token: str = Form(...)):
     try:
         registro_verificado.confirmar(token)
     except ValueError as error:
-        return pagina_estado(request, str(error), status=400)
+        return pagina_estado(request, str(error), status=400, campo=error.campo if isinstance(error, CampoInvalido) else None)
     return RedirectResponse("/?registro=ok", status_code=303)
 
 
@@ -97,7 +101,7 @@ def solicitar_recuperacion(request: Request, correo: str = Form(...)):
     try:
         recuperacion.solicitar(correo, enviar_recuperacion)
     except ValueError as error:
-        return pagina_estado(request, str(error), status=400)
+        return pagina_estado(request, str(error), status=400, campo=error.campo if isinstance(error, CampoInvalido) else None)
     except CorreoNoDisponible:
         logging.getLogger(__name__).exception("No se pudo entregar el enlace de recuperación")
     return pagina_estado(request, "Si el correo pertenece a una cuenta, recibirás un enlace para cambiar tu contraseña.")
@@ -115,4 +119,3 @@ def cambiar_contrasena(request: Request, token: str = Form(...), contrasena: str
     except ValueError as error:
         return pagina_estado(request, str(error), token, status=400, accion="restablecer")
     return pagina_estado(request, "Tu contraseña se actualizó. Ya puedes iniciar sesión.")
-
